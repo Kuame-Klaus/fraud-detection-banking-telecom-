@@ -41,3 +41,14 @@ Default: about 20 million rows in B1 and in T1, with T4 at a similar scale. Othe
 1. The pack gives no fraud rates or thresholds. They will come from calibration to public data and from B14 and T12, not invented.
 2. Whether synthetic alerts (B13, T11) are needed outside review mode. Default: generate them, since templates exist.
 3. The time zone for synthetic timestamps. Default: UTC, stated in the manifest.
+
+## 8. Columns missing for the Klaus Konsults extensions
+
+1. Impossible travel needs terminal or transaction location below country level (city or coordinates). B1 has only country and B9 terminal data is not defined in detail.
+2. Duplicate vendor payments would be stronger with an invoice number in B10.
+3. Wangiri needs call direction (inbound or outbound) and originating country in T1. The T1 SQL has neither.
+4. Recharge fraud would need a voucher or serial number in T7.
+5. Interconnect leakage joins T1 and T8 on route; T1 has no carrier column, so the join is by route and day only.
+6. Telecom maps (chart 12) need cell latitude and longitude. T9 has only "location".
+7. Insider SIM swap uses B8 in the pack, which crosses into banking. With the entities kept separate, telecom staff access data is needed; the pack has no telecom equivalent of B8. Default: use T3 performed_by_user and shop_id only until a telecom access log is supplied.
+8. Planted case shares per scenario are not given anywhere. Default: set from calibration where public data allows, otherwise a documented provisional value.

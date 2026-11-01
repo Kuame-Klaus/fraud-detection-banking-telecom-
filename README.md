@@ -25,7 +25,12 @@ Each scenario is mapped to its datasets and columns in docs/scenario_coverage.md
 11. Agent fraud
 12. Insider SIM swap or access abuse
 
-Further uses listed in the pack, such as dormant accounts, duplicate payments, wallet drain and impossible travel, are also listed there.
+Klaus Konsults extensions beyond the pack:
+
+13. Banking: dormant account wake up, KYC mismatch with expected volume, impossible travel, duplicate vendor payments, payroll after exit, privileged access changes before journals, Benford's law, reversal abuse.
+14. Telecom: wallet tier breach, dormant wallet drain, Wangiri, IMEI churn, recharge fraud, interconnect leakage, agent float anomalies.
+
+Banking tests use only banking data and telecom tests use only telecom data.
 
 ## 2. Data
 
@@ -45,19 +50,33 @@ Where the pack is silent or unclear, Klaus Konsults has set defaults so work can
 
 ## 4. One process, three stacks
 
+Each stack runs the same six stages (docs/pipeline_steps.md):
+
+1. Load and control totals.
+2. Data quality checks.
+3. Features.
+4. Scenario rules.
+5. Model: XGBoost in Python, built in learners in Alteryx and KNIME.
+6. Shared results output, with detection review checks: rule coverage gaps, threshold sensitivity at plus or minus 10% and 20%, monthly score drift, and agreement between the three tools.
+
+All stacks write one shared results file format (docs/output_schema.md). The same 12 charts (docs/charts.md) are built in Python from those files, and planned for Power BI.
+
+Further detail:
+
 1. Alteryx, KNIME and Python each run the numbered steps in docs/pipeline_steps.md, starting with the pack's reconciliation and data quality checks.
 2. All three read the same input files and use the same time based splits.
-3. All three write the shared scores, metrics and data quality tables in docs/output_schema.md.
-4. Python reads those outputs and produces the comparison charts.
-5. Power BI is a placeholder and nothing is built there yet.
+3. All three write the shared results file in docs/output_schema.md.
+4. Python reads those files and builds the 12 charts in docs/charts.md.
+5. Power BI will rebuild the same charts later; nothing is built there yet.
 
 ## 5. Repository structure
 
-* python/ : synthetic generator, Python pipeline and charts.
 * python/synthetic/ : generator plan and config file.
+* python/pipeline/ : the six stage Python pipeline.
+* python/viz/ : the 12 charts.
 * alteryx/ : Alteryx workflows (.yxmd).
 * knime/ : KNIME workflows (.knwf).
-* powerbi/ : placeholder for Power BI visualization.
+* powerbi/ : the same 12 charts, planned only.
 * data/ : local data only, ignored by git.
 * outputs/ : local scores, metrics and charts, ignored by git.
 * docs/sql/additions/ : provisional default SQL, kept apart from the pack SQL.

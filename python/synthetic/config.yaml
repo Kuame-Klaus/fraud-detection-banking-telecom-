@@ -45,17 +45,40 @@ rows:
     T10_complaints_and_cases: 15000      # ASSUMPTION
     T11_alerts_and_rules: 100000         # ASSUMPTION
     T12_reference_parameters: 1000       # ASSUMPTION
+label_column: synthetic_scenario   # scenario name on planted rows, empty otherwise
+planted_case_share: from_calibration  # per scenario share; provisional default
 scenarios:
-  - card_testing
-  - account_takeover
-  - mule_network
-  - structuring
-  - journal_abuse
-  - segregation_of_duties
-  - ghost_vendor_or_employee
-  - sim_swap_fraud
-  - sim_box_and_bypass
-  - subscription_and_bust_out
-  - agent_fraud
-  - insider_sim_swap_or_access_abuse
+  banking:
+    # from the pack
+    - card_testing
+    - account_takeover
+    - mule_network
+    - structuring
+    - journal_abuse
+    - segregation_of_duties
+    - ghost_vendor_or_employee
+    # Klaus Konsults extensions
+    - dormant_account_wake_up
+    - kyc_mismatch_expected_volume
+    - impossible_travel
+    - duplicate_vendor_payments
+    - payroll_after_exit
+    - privileged_access_before_journals
+    - benford_anomaly
+    - reversal_abuse
+  telecom:
+    # from the pack
+    - sim_swap_fraud
+    - sim_box_and_bypass
+    - subscription_and_bust_out
+    - agent_fraud
+    - insider_sim_swap_or_access_abuse
+    # Klaus Konsults extensions
+    - wallet_tier_breach
+    - dormant_wallet_drain
+    - wangiri
+    - imei_churn
+    - recharge_fraud
+    - interconnect_leakage
+    - agent_float_anomalies
 fraud_rate: from_calibration

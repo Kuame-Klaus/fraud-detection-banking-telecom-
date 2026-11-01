@@ -1,10 +1,7 @@
 # Python
 
-Python implementation of the shared process:
-
 1. synthetic/ : seeded synthetic data generator (see synthetic/README.md).
-2. Pipeline: the numbered steps in docs/pipeline_steps.md, starting with reconciliation and data quality checks, then scenario tests, features, time based splits, models (logistic regression, random forest, XGBoost, LightGBM), imbalanced learn resampling, graph features and SHAP.
-3. Outputs in the shared schema in docs/output_schema.md.
-4. Charts: read the shared outputs from all three stacks and produce comparison visuals in outputs/charts/.
+2. pipeline/ : the six stage pipeline in docs/pipeline_steps.md, with XGBoost as the model.
+3. viz/ : the 12 charts in docs/charts.md, read from the shared results files.
 
-At 20 million rows, use pyarrow or polars, chunked reads, and LightGBM on a stratified sample or out of core. Runtime and memory will be measured, not assumed.
+At 20 million rows, use pyarrow or polars, chunked reads, and XGBoost on a stratified sample or with external memory, scoring the full set in chunks. Runtime and memory will be measured, not assumed.

@@ -26,7 +26,7 @@ Banking and telecom are generated as two separate entities, with no shared keys 
 1. Fixed seed: the same config and seed always give the same files.
 2. Config file: config.yaml holds the seed, row counts, chunk size, output format, period and scenario settings.
 3. Calibration: amount, time and type distributions and fraud rates come from the public Kaggle credit card fraud dataset and PaySim. Only summary statistics are used and no records are copied. Telecom scenarios use documented assumptions recorded in docs/.
-4. Scenarios: fraud patterns are injected for each scenario in docs/scenario_coverage.md, with labels written to B12 and T10.
+4. Planted cases: labelled synthetic cases are planted for every one of the 27 scenarios in docs/scenario_coverage.md, including the Klaus Konsults extensions. Every row of every event table carries a label column, synthetic_scenario, holding the scenario name (empty for normal rows). Confirmed cases are also written to B12 and T10. Banking cases stay in banking tables and telecom cases in telecom tables. The share of planted cases per scenario is set in config.yaml and is a provisional default, not a measured rate.
 5. Pack format rules: UTF 8, ISO 8601 timestamps with the time zone stated, decimal amounts with currency, and one file per month for large tables.
 6. Output: chunked Parquet by default, with a CSV option. Files are named with a synthetic_ prefix and the dataset ID, for example synthetic_B1_transactions_2025_01_part_0001.parquet.
 7. Control totals: each run also writes row counts and amount totals per table per month, plus tie out figures, so pipeline steps 3 to 6 can be tested, including the B7 and T1 control totals in docs/sql/additions/.
