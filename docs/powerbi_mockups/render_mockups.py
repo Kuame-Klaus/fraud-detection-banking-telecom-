@@ -7,6 +7,7 @@ Run from the repo root: python docs/powerbi_mockups/render_mockups.py
 from __future__ import annotations
 
 import subprocess
+import textwrap
 from pathlib import Path
 
 import matplotlib
@@ -197,7 +198,7 @@ g = b.groupby(["entity_id", "entity_type"]).agg(max_score=("score", "max"), aler
 t1 = g.sort_values("max_score", ascending=False).head(20)
 t2 = g.sort_values("alerted", ascending=False).head(20)
 f = lambda t: pd.DataFrame({"Entity": t.entity_id, "Type": t.entity_type, "Max score": t.max_score.map("{:.3f}".format),
-                            "Alerted amount": t.alerted.map(lambda v: fmt(v, 2)), "Planted scenario": t.scenario.str.replace("_", " ").str.slice(0, 26)})
+                            "Alerted amount": t.alerted.map(lambda v: fmt(v, 2)), "Planted scenario": t.scenario.str.replace("_", " ").map(lambda v: "\n".join(textwrap.wrap(v, 26)))})
 table(fig, [0.025, 0.1, 0.465, 0.68], f(t1), title="Top 20 by max score", fs=8.5, colw=[0.2, 0.12, 0.14, 0.2, 0.34])
 table(fig, [0.51, 0.1, 0.465, 0.68], f(t2), title="Top 20 by alerted amount", fs=8.5, colw=[0.2, 0.12, 0.14, 0.2, 0.34])
 save(fig, 5, "risk_leaderboards")
@@ -287,8 +288,8 @@ card(fig, [0.35, 0.62, 0.3, 0.16], "Failed", fmt((~q.passed.astype(bool)).sum())
 card(fig, [0.675, 0.62, 0.3, 0.16], "Pass rate", f"{q.passed.astype(bool).mean():.0%}")
 qb = q[q.domain == "banking"].head(22)
 table(fig, [0.025, 0.08, 0.95, 0.5], pd.DataFrame({"Step": qb.step.astype(int), "Dataset": qb.dataset_id, "Check": qb.check_name,
-                                                    "Expected": qb.expected.fillna("").astype(str).str.slice(0, 26),
-                                                    "Observed": qb.observed.astype(str).str.slice(0, 42), "Passed": qb.passed.astype(str)}),
+                                                    "Expected": qb.expected.fillna("").astype(str),
+                                                    "Observed": qb.observed.astype(str), "Passed": qb.passed.astype(str)}),
       fs=8, colw=[0.05, 0.07, 0.25, 0.2, 0.33, 0.1], red=lambda i: not bool(qb.passed.iloc[i]))
 save(fig, 10, "dq_reconciliation")
 
