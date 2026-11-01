@@ -6,7 +6,7 @@ A Klaus Konsults project. All data is SYNTHETIC.
 
 ## How to use this prompt
 
-Paste this whole file into an AI assistant and ask it to guide you through building the Alteryx workflow, or follow it by hand. The goal is a Alteryx build that reads the same files as the Python pipeline, runs the same six stages, and writes the same shared results file, so the three tools can be compared record by record. Banking and telecom are separate entities: never join a B table to a T table.
+Paste this whole file into an AI assistant and ask it to guide you through building the Alteryx workflow, or follow it by hand. The goal is an Alteryx build that reads the same files as the Python pipeline, runs the same six stages, and writes the same shared results file, so the three tools can be compared record by record. Banking and telecom are separate entities: never join a B table to a T table.
 
 Sources used for this prompt: pipeline code, data/full/manifest.json and data/sample at commit a689b4b, which includes the fixed insider SIM swap (R_T09) and IMEI churn (R_T10) rules. The committed outputs/sample/results_latest.csv (commit 6949f0b) predates that fix, so every expected value below was recomputed by running `python -m python.pipeline.run --data data/sample` at commit a689b4b (run_id python_sample_recheck, not committed).
 

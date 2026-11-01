@@ -268,12 +268,12 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** Shop staff doing swaps for fraudsters.
 * **Data.** T3 performed_by_user, swap_time.
-* **Rule R_T09.** Flags night swaps (before 5 am) by users whose night swap count is in the top 0.1%. ASSUMPTION default.
+* **Rule R_T09.** Flags night swaps (before 5 am) when the same user does 5 or more night swaps on the same day. ASSUMPTION defaults. Changed from a top 0.1% quantile cut, which found nothing at sample size.
 * **Model features.** None.
 * **Outputs.** Rule rows for insider_sim_swap_or_access_abuse, dataset_id T3.
-* **Planted cases.** One user doing many swaps at night.
+* **Planted cases.** Blocks of 8 call centre swaps between midnight and 4 am, each block by one user on one night (8 rows in the sample).
 * **Differs from plan.** The plan pairs T3 with B8. Since banking and telecom are separate, the code uses T3 only. shop_id is not used.
-* **Limits and false positives.** A top 0.1% cut always flags someone, even when nobody is abusing access.
+* **Limits and false positives.** Genuine night shift staff with a busy queue.
 
 ### 21. Wallet tier breach (added)
 
@@ -311,11 +311,11 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** A number moved between many handsets, often linked to stolen phones or SIM swap rings.
 * **Data.** T3 msisdn, swap_id.
-* **Rule R_T10.** Flags numbers with 4 or more swaps. ASSUMPTION default.
+* **Rule R_T10.** Flags every swap in a run of 4 or more swaps on the same number within 30 days. ASSUMPTION defaults. Changed from 4 or more swaps over the whole year.
 * **Model features.** None.
 * **Outputs.** Rule rows for imei_churn, dataset_id T3.
-* **Planted cases.** Many swaps on a few numbers.
-* **Differs from plan.** The plan also uses T1 imei and the old and new IMEI. The code counts swaps only.
+* **Planted cases.** Blocks of 6 swaps on one number within 30 days, each new IMEI becoming the next old IMEI (6 rows in the sample).
+* **Differs from plan.** The plan also uses T1 imei and the old and new IMEI. The code counts swaps in a 30 day window; the planted IMEI chain is not used by the rule yet.
 * **Limits and false positives.** Phone repair and upgrades.
 
 ### 25. Recharge fraud (added)
