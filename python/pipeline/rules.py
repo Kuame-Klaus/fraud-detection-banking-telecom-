@@ -1,6 +1,7 @@
 """Step 4: transparent scenario rules. Each returns a boolean flag per row of its table.
 Thresholds are ASSUMPTION defaults, not client parameters."""
 from __future__ import annotations
+import numpy as np
 
 import pandas as pd
 
@@ -132,9 +133,32 @@ def bust(d):
     return (d["duration_sec"] >= 1800) & d["roaming_flag"].astype(bool)
 
 
-@rule("interconnect_leakage", "R_T08", "T1", "route", "route", "start_time", "duration_sec")
 def leak(d):
+    """Version 1 of R_T08 (every T1 call on a leaky route). Kept for reference; R_T08 now runs at route and day level."""
     return d["route"].isin(d.attrs.get("leaky_routes", []))
+
+
+LEAK_MIN_UNSETTLED_SHARE = 0.35  # ASSUMPTION
+LEAK_RATE_VS_MEDIAN = 0.6        # ASSUMPTION
+
+
+def leak_route_day(t1_route_day_minutes: pd.Series, t8: pd.DataFrame) -> pd.DataFrame:
+    """R_T08 at route and day level. One row per route day that has a T8 settlement row.
+    unsettled_minutes = T1 minutes minus T8 settled minutes; settlement_rate = settlement amount per settled minute.
+    Flag when the unsettled share is at least 0.35 and the rate is below 0.6 times the median rate.
+    Route days with T1 traffic but no T8 row are counted separately (no_settlement_row), not flagged."""
+    t8 = t8.assign(day=pd.to_datetime(t8["traffic_date"], utc=True).dt.strftime("%Y-%m-%d"))
+    g = t8.groupby(["route", "day"]).agg(settled_minutes=("minutes", "sum"), settlement_amount=("settlement_amount", "sum"),
+                                          synthetic_scenario=("synthetic_scenario", "max"))
+    g = g.join(t1_route_day_minutes.rename("t1_minutes"), how="left").fillna({"t1_minutes": 0.0}).reset_index()
+    g["synthetic_scenario"] = g["synthetic_scenario"].fillna("").astype(str)
+    g["unsettled_minutes"] = g["t1_minutes"] - g["settled_minutes"]
+    g["unsettled_share"] = np.where(g["t1_minutes"] > 0, g["unsettled_minutes"] / g["t1_minutes"].where(g["t1_minutes"] > 0, 1), 0.0)
+    g["settlement_rate"] = g["settlement_amount"] / g["settled_minutes"].where(g["settled_minutes"] > 0, np.nan)
+    med = g["settlement_rate"].median()
+    g["flag"] = (g["unsettled_share"] >= LEAK_MIN_UNSETTLED_SHARE) & (g["settlement_rate"] < LEAK_RATE_VS_MEDIAN * med)
+    g.attrs["no_settlement_row"] = int(len(set(t1_route_day_minutes.index) - set(zip(g["route"], g["day"]))))
+    return g
 
 
 @rule("insider_sim_swap_or_access_abuse", "R_T09", "T3", "performed_by_user", "user", "swap_time", None)
@@ -197,3 +221,56 @@ def leaky_routes_from(t1_minutes_by_route: pd.Series, t8: pd.DataFrame) -> list[
     s = t8.groupby("route")["settlement_amount"].sum() / t8.groupby("route")["minutes"].sum()
     ratio = s.reindex(t1_minutes_by_route.index)
     return list(ratio[ratio < 0.6 * ratio.median()].index)
+
+
+# ---------------------------------------------------------------------------
+# PROPOSED versions (docs/threshold_proposals.md). Not the default: used only with run.py --rules proposed,
+# until Klaus Konsults approves them.
+FAR = {"GB", "US"}  # ASSUMPTION: countries not reachable from GH within 30 minutes
+
+
+def travel_proposed(d):
+    d2 = d.sort_values(["account_id", "timestamp"])
+    g = d2.groupby("account_id", sort=False)
+    prev_c = g["country"].shift(); prev_ch = g["channel"].shift(); prev_rc = g["response_code"].shift()
+    gap = g["timestamp"].diff().dt.total_seconds()
+    pair = ((d2["country"] != prev_c) & (gap <= 1800) & (d2["channel"] == "card") & (prev_ch == "card")
+            & (d2["response_code"] == "00") & (prev_rc == "00")
+            & (d2["country"].isin(FAR) | prev_c.isin(FAR)) & (d2["country"].eq("GH") | prev_c.eq("GH")))
+    flag = pair | pair.groupby(d2["account_id"], sort=False).shift(-1, fill_value=False)  # also the first row of the pair
+    return flag.reindex(d.index)
+
+
+def ato_auth_proposed(d):
+    """2 or more failed logins, then a password reset, within 15 minutes, from abroad; flag every event in that window."""
+    d2 = d.sort_values(["person_id", "timestamp"])
+    t = d2["timestamp"].astype("int64") // 10**9; p = d2["person_id"]
+    fail = d2["event_type"].eq("login_failed").astype(int); reset = d2["event_type"].eq("password_reset")
+    def win(s, w):  # count in the 900 s before each row, per person
+        x = pd.Series(s.to_numpy(), index=pd.to_datetime(t.to_numpy(), unit="s"))
+        return x.groupby(p.to_numpy()).rolling(f"{w}s").sum().reset_index(level=0, drop=True).to_numpy()
+    fails_before = win(fail, 900)
+    anchor = pd.Series(reset.to_numpy() & (fails_before >= 2) & d2["geo"].ne("GH").to_numpy(), index=d2.index)
+    # mark rows within 15 minutes before and after an anchor on the same person
+    at = pd.Series(np.where(anchor, t, np.nan), index=d2.index)
+    nxt = at.groupby(p).bfill(); prv = at.groupby(p).ffill()
+    flag = ((nxt - t).between(0, 900) | (t - prv).between(0, 900)) & d2["geo"].ne("GH")
+    return flag.reindex(d.index)
+
+
+def benford_proposed(d):
+    """First two digits 70, 71, 80 or 81 in 700 to 899 or 7,000 to 8,999. ASSUMPTION, see risks in the proposal doc."""
+    a = d["amount"].to_numpy(dtype=float); ok = a >= 10
+    two = np.zeros(len(a), dtype=int)
+    two[ok] = (a[ok] / 10 ** (np.floor(np.log10(a[ok])) - 1)).astype(int)
+    band = ((a >= 700) & (a < 900)) | ((a >= 7000) & (a < 9000))
+    return pd.Series(np.isin(two, [70, 71, 80, 81]) & band, index=d.index)
+
+
+def simswap_proposed(d):
+    """Cash out within 24 hours after the latest swap at or before the transaction (not the latest swap overall)."""
+    return (d["hours_since_prior_swap"] < 24) & (d["type"] == "cash_out")
+
+
+PROPOSED = {"R_B06": travel_proposed, "R_B09": ato_auth_proposed, "R_T01": simswap_proposed}
+# benford_proposed was measured and rejected (sample recall 0.1); see docs/threshold_proposals.md

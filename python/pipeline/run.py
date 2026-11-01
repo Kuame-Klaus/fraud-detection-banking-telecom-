@@ -90,6 +90,8 @@ def main(argv=None):
     ap.add_argument("--max-train-rows", type=int, default=2_000_000, help="stratified sample cap for XGBoost training")
     ap.add_argument("--csv-scores", choices=["auto", "yes", "no"], default="auto",
                     help="write score rows to the CSV too (auto: only when the run is small)")
+    ap.add_argument("--rules", choices=["default", "proposed"], default="default",
+                    help="proposed swaps in the candidate R_B06, R_B09, R_B16 and R_T01 from docs/threshold_proposals.md")
     a = ap.parse_args(argv)
     run_id = a.run_id or "python_" + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = Path(a.out); tmp = out / f"_tmp_{run_id}"
@@ -164,11 +166,13 @@ def main(argv=None):
                 tf = time.time(); d = features.banking_features(d, small["B2_accounts"]); t_feat += time.time() - tf
                 feats = features.BANK_FEATURES
             elif tb == "T4":
-                tf = time.time(); d = features.telecom_features(d, small["T5_wallets"], last_swap, agent_day_s); t_feat += time.time() - tf
+                tf = time.time(); d = features.telecom_features(d, small["T5_wallets"], last_swap, agent_day_s,
+                                                swaps=small["T3_sims_and_sim_swap_events"] if a.rules == "proposed" else None); t_feat += time.time() - tf
                 feats = features.TEL_FEATURES
             d.attrs["leaky_routes"] = leaky; d.attrs["privileged_users"] = priv
             lab = d["synthetic_scenario"].to_numpy()
             for scen, rid, _, ent, etype, tcol, acol, f in by_table.get(tb, []):
+                if a.rules == "proposed": f = rules.PROPOSED.get(rid, f)
                 flag = f(d).reindex(d.index).fillna(False).astype(bool).to_numpy()
                 s = stats.setdefault((rid, scen, tb, domain), [0, 0, 0])
                 s[0] += int((flag & (lab == scen)).sum()); s[1] += int((lab == scen).sum()); s[2] += int(flag.sum())
@@ -189,6 +193,21 @@ def main(argv=None):
                 else:
                     edges["T4"].append(d[d["agent_day_count"] >= 8].groupby(["agent_id", "wallet_id"])["amount"].agg(["sum", "size"]).reset_index())
             del d
+    # R_T08 interconnect leakage at route and day level (T1 minutes versus T8 settlement)
+    g = rules.leak_route_day(geo1_s, small["T8_interconnect_traffic"]); covered.add("interconnect_leakage")
+    lab8 = (g["synthetic_scenario"] == "interconnect_leakage").to_numpy(); f8 = g["flag"].to_numpy()
+    stats[("R_T08", "interconnect_leakage", "T8", "telecom")] = [int((f8 & lab8).sum()), int(lab8.sum()), int(f8.sum())]
+    h = g[f8]
+    W.write(pd.DataFrame({"record_type": "score", "domain": "telecom", "dataset_id": "T8", "model": "rule", "rule_id": "R_T08",
+                          "scenario": "interconnect_leakage", "split": "all", "record_id": (h["route"] + "_" + h["day"]).to_numpy(),
+                          "entity_id": h["route"].to_numpy(), "entity_type": "route",
+                          "event_timestamp": (h["day"] + "T00:00:00Z").to_numpy(), "month": h["day"].str[:7].to_numpy(),
+                          "score": 1.0, "threshold": 1.0, "predicted_label": 1,
+                          "true_label": (h["synthetic_scenario"] != "").astype(int).to_numpy(),
+                          "true_scenario": h["synthetic_scenario"].to_numpy(), "amount": h["unsettled_minutes"].to_numpy(),
+                          "note": "amount is unsettled minutes for the route day"}))
+    W.add({"record_type": "metric", "domain": "telecom", "model": "rule", "rule_id": "R_T08", "scenario": "interconnect_leakage",
+           "split": "all", "dataset_id": "T8", "metric": "route_days_without_settlement_row", "value": float(g.attrs["no_settlement_row"])})
     for (rid, scen, tb, domain), (tp, planted, alerts) in stats.items():
         base = {"record_type": "metric", "domain": domain, "model": "rule", "rule_id": rid, "scenario": scen, "split": "all", "dataset_id": tb}
         for m, v in [("planted_rows", planted), ("alerts", alerts), ("detected", tp), ("recall", tp / planted if planted else np.nan),
@@ -222,6 +241,7 @@ def main(argv=None):
         for s_name in ("train", "validation", "test"):
             m = model.metrics(y, score, pred, sp == s_name)
             m["alerts"] = int(pred[sp == s_name].sum())
+            m["detected"] = int((pred[sp == s_name] == 1)[y[sp == s_name] == 1].sum())  # true positives, so recall = detected / positives
             for k, v in m.items():
                 W.add({"record_type": "metric", "domain": domain, "model": "xgboost", "scenario": "all", "split": s_name,
                        "metric": k, "value": float(v), "alert_rate": m["alert_rate"], "train_rows": ntr,

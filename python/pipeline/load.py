@@ -23,6 +23,8 @@ def _fix_csv(df: pd.DataFrame) -> pd.DataFrame:
             df[c] = pd.to_datetime(df[c], errors="coerce", utc=True).dt.tz_localize(None)
     if "synthetic_scenario" in df:
         df["synthetic_scenario"] = df["synthetic_scenario"].fillna("")
+    if "response_code" in df:  # CSV readers turn "00" into 0; keep the code as a two character string like the Parquet data
+        df["response_code"] = df["response_code"].astype("Int64").astype(str).str.zfill(2)
     for c in ("original_txn_id", "reversal_of"):
         if c in df:
             df[c] = df[c].fillna("")

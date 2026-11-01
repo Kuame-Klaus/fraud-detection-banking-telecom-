@@ -53,7 +53,8 @@ BANK_FEATURES = ["log_amount", "hour", "weekday", "secs_since_prev", "secs_to_ne
                  "channel_card", "channel_mobile", "channel_web", "channel_branch", "channel_atm"]
 
 
-def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, last_swap: pd.Series, agent_day: pd.Series | None = None) -> pd.DataFrame:
+def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, last_swap: pd.Series, agent_day: pd.Series | None = None,
+                     swaps: pd.DataFrame | None = None) -> pd.DataFrame:
     """last_swap: latest swap_time per msisdn from T3. agent_day: global row count per (agent_id, day),
     built incrementally across chunks, so a wallet bucket still sees each agent's whole day."""
     df = _entity_window(t4, "wallet_id", "timestamp", "amount")
@@ -75,6 +76,16 @@ def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, last_swap: pd.Series, a
     swap_t = ms.map(last_swap)
     hrs = (df["timestamp"] - swap_t).dt.total_seconds() / 3600
     df["hours_since_swap"] = hrs.where(hrs >= 0, 1e5).fillna(1e5).clip(upper=1e5)
+    if swaps is not None:  # latest swap at or before each transaction (used by the proposed R_T01 only)
+        x = pd.DataFrame({"msisdn": ms.to_numpy(), "timestamp": df["timestamp"].to_numpy(), "_i": np.arange(len(df))}).dropna(subset=["msisdn"])
+        x = x.sort_values("timestamp")
+        sw = swaps[["msisdn", "swap_time"]].dropna().sort_values("swap_time")
+        sw = sw.assign(swap_time=pd.to_datetime(sw["swap_time"]).astype(x["timestamp"].dtype))
+        j = pd.merge_asof(x, sw, left_on="timestamp", right_on="swap_time", by="msisdn", direction="backward")
+        h = np.full(len(df), 1e5); hh = ((j["timestamp"] - j["swap_time"]).dt.total_seconds() / 3600).fillna(1e5).to_numpy()
+        h[j["_i"].to_numpy()] = hh; df["hours_since_prior_swap"] = np.clip(h, None, 1e5)
+    else:
+        df["hours_since_prior_swap"] = df["hours_since_swap"]
     for x in ["p2p", "cash_in", "cash_out", "merchant", "airtime"]:
         df[f"type_{x}"] = (df["type"] == x).astype(int)
     return df
