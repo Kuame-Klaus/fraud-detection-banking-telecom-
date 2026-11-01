@@ -77,8 +77,8 @@ Further detail:
 * alteryx/ : Alteryx workflows (.yxmd).
 * knime/ : KNIME workflows (.knwf).
 * powerbi/ : the same 12 charts, planned only.
-* data/ : local data only, ignored by git.
-* outputs/ : local scores, metrics and charts, ignored by git.
+* data/ : local data, ignored by git, except data/sample/ which holds the committed SYNTHETIC sample CSVs.
+* outputs/ : local scores, metrics and charts, ignored by git, except outputs/sample/ which holds the sample results and charts.
 * docs/sql/additions/ : provisional default SQL, kept apart from the pack SQL.
 * docs/ : data dictionary, scenario coverage, pipeline steps, output schema, engagement rules, SQL templates, prompts and open questions.
 
@@ -128,6 +128,55 @@ If a stack trains on a sample, the sample size and method are recorded so compar
 10. Phase 10: Python comparison charts across the three stacks and write up.
 11. Phase 11: Power BI visualization once its details are confirmed.
 12. Phase 12: run on approved real client extracts under the pack's ground rules, outside this repository.
+
+## 10. How to connect each tool
+
+All data in this repo is SYNTHETIC and labelled as such. The committed sample is in data/sample/ (CSV, about 50,000 rows for each main table, every planted fraud case included and labelled in the synthetic_scenario column). The sample pipeline results are in outputs/sample/. Every tool reads the same files.
+
+Raw URL pattern for a dataset:
+
+https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/<domain>/<dataset>.csv
+
+For example:
+
+* https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/banking/B1_transactions.csv
+* https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/telecom/T1_cdrs.csv
+* https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/telecom/T4_momo_wallet_txns.csv
+
+The full list of 26 datasets with their raw URLs and local full size paths is in config/sources.csv. The switch between the sample URLs and local full data is the `source` value in config/data_source.yaml (`sample_url` or `local_full`).
+
+Shared results file (all charts read this):
+
+https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/outputs/sample/results_latest.csv
+
+### Alteryx
+
+1. Read config/sources.csv, pick the dataset, and pass its raw_url to a Download tool, then parse the CSV.
+2. To use local full data, set `source` to `local_full` and read the Parquet folder with Dynamic Input.
+3. Step by step notes are in alteryx/BUILD_NOTES.md. These are notes, not a tested .yxmd workflow.
+
+### KNIME
+
+1. Paste a raw URL into the CSV Reader node as the file path, or loop over config/sources.csv.
+2. To use local full data, set the `source` variable to `local_full` and use the Parquet Reader node.
+3. Step by step notes are in knime/BUILD_NOTES.md. These are notes, not a tested .knwf workflow.
+
+### Power BI (planned)
+
+1. Home, Get data, Web.
+2. Paste https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/outputs/sample/results_latest.csv and choose Anonymous access.
+3. In Power Query, set column types, then filter on record_type for each page, as listed in docs/charts.md.
+4. Raw dataset CSVs from data/sample/ can be added the same way if a page needs them.
+
+### Python
+
+1. `pip install -r requirements.txt`
+2. `make pipeline` runs the six steps on the committed sample (data/sample) and writes outputs/sample.
+3. `make charts` draws the charts into outputs/sample/charts.
+4. `make test` runs the tests.
+5. `make full` generates full size data locally under data/synthetic/full (ignored by git), then `make pipeline-full`.
+6. `make release` packages full data into parts of 2 GB or less with a manifest and SHA256 checksums under dist/release. It does not create or publish a GitHub Release.
+7. pandas can also read a raw URL directly: `pd.read_csv("https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/banking/B1_transactions.csv")`.
 
 ## Credits
 

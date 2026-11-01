@@ -1,0 +1,8 @@
+# Switch used by every stack (Alteryx, KNIME, Python, Power BI). SYNTHETIC data only.
+# sample_url: read the committed sample CSVs straight from GitHub (default, no setup needed)
+# local_full: read full size Parquet you generated yourself with `make full`
+source: sample_url
+sample_base_url: https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample
+local_full_dir: data/synthetic/full
+results_sample_url: https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/outputs/sample/results_latest.csv
+# The list of datasets with both locations is in config/sources.csv
