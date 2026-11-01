@@ -244,7 +244,7 @@ On the Power BI Service, the data source is set to Anonymous with privacy level 
 
 ## Page mockups
 
-These are static PNG mockups drawn with matplotlib by `docs/powerbi_mockups/render_mockups.py`. They use the real sample results in `outputs/sample/results_latest.csv` (run python_sample, data commit 0e51256). They are not a Power BI build and have not been tested in Power BI. Only the Python stack has run, so Alteryx and KNIME show as no run yet. The cell map on page 12 is a labelled placeholder because the results file has no latitude or longitude yet.
+These are static PNG mockups drawn with matplotlib by `docs/powerbi_mockups/render_mockups.py`. They use the real sample results in `outputs/sample/results_latest.csv` (run python_sample, data commit 91d0af4). They are not a Power BI build and have not been tested in Power BI. Only the Python stack has run, so Alteryx and KNIME show as no run yet. The cell map on page 12 is a labelled placeholder because the results file has no latitude or longitude yet.
 
 | Page | Mockup |
 |---|---|
