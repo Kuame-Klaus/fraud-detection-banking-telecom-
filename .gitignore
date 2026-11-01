@@ -34,3 +34,10 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Committed SYNTHETIC sample data and sample outputs (exceptions to the rules above)
+!data/sample/
+!data/sample/**
+!outputs/sample/
+!outputs/sample/**
+dist/
