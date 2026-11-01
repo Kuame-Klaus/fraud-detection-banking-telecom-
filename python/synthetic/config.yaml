@@ -1,0 +1,61 @@
+# SYNTHETIC data generator config (plan). All values are provisional defaults.
+# Dataset IDs and names follow docs/data_dictionary.md.
+# Row counts other than B1, T1 and T4 are ASSUMPTION proportions chosen to look realistic;
+# they are not measured from any client and can be overridden.
+seed: 42
+label: synthetic
+format: parquet          # parquet or csv
+chunk_rows: 1000000
+output_dir: data/synthetic
+file_prefix: synthetic_
+timezone: UTC            # ASSUMPTION; pack requires the time zone to be stated
+period:
+  baseline_months: 3     # pack: 3 months before the period for baselines
+  months: 12             # pack: at least 12 months
+calibration:
+  sources: [kaggle_creditcard, paysim]
+  use: [distributions, fraud_rates]
+entities: separate       # banking and telecom share no keys
+rows:
+  banking:
+    B1_transactions: 20000000            # main event table
+    B2_accounts: 750000                  # ASSUMPTION
+    B3_persons: 500000                   # ASSUMPTION
+    B4_auth_events: 10000000             # ASSUMPTION
+    B5_devices: 800000                   # ASSUMPTION
+    B6_beneficiaries: 1500000            # ASSUMPTION
+    B7_gl_journal: 2000000               # ASSUMPTION
+    B8_users_access: 20000               # ASSUMPTION
+    B9_cards_and_authorisations: 6000000 # ASSUMPTION
+    B10_vendors_and_payments: 100000     # ASSUMPTION
+    B11_payroll_and_hr: 72000            # ASSUMPTION
+    B12_fraud_cases: 20000               # ASSUMPTION
+    B13_existing_alerts: 200000          # ASSUMPTION
+    B14_reference_parameters: 2000       # ASSUMPTION
+  telecom:
+    T1_cdrs: 20000000                    # main event table
+    T2_subscribers: 1000000              # ASSUMPTION
+    T3_sims_and_sim_swap_events: 1100000 # ASSUMPTION
+    T4_momo_wallet_txns: 20000000        # similar scale to T1
+    T5_wallets: 800000                   # ASSUMPTION
+    T6_agents: 2000000                   # ASSUMPTION, agent rows joined to float movements
+    T7_topups_billing: 12000000          # ASSUMPTION
+    T8_interconnect_traffic: 50000       # ASSUMPTION
+    T9_cell_sites_and_roaming: 200000    # ASSUMPTION
+    T10_complaints_and_cases: 15000      # ASSUMPTION
+    T11_alerts_and_rules: 100000         # ASSUMPTION
+    T12_reference_parameters: 1000       # ASSUMPTION
+scenarios:
+  - card_testing
+  - account_takeover
+  - mule_network
+  - structuring
+  - journal_abuse
+  - segregation_of_duties
+  - ghost_vendor_or_employee
+  - sim_swap_fraud
+  - sim_box_and_bypass
+  - subscription_and_bust_out
+  - agent_fraud
+  - insider_sim_swap_or_access_abuse
+fraud_rate: from_calibration

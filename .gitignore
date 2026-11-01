@@ -1,0 +1,36 @@
+# Data that must never be committed
+data/raw/
+data/partner/
+data/synthetic/
+outputs/
+
+# Secrets and keys
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials*.json
+
+# Large files
+*.parquet
+*.csv
+*.csv.gz
+*.zip
+*.7z
+*.h5
+*.pkl
+*.joblib
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
