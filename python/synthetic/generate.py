@@ -414,16 +414,39 @@ def gen_telecom(cfg, scale, out, rng, chunk):
     user = rng.integers(0, 2000, n); ch = rng.choice(["shop", "call_centre", "online"], n).astype(object)
     lab = np.full(n, "", dtype=object); k = max(1, int(n * PLANT_SHARE * 2))
     ssw = rng.choice(n, k, replace=False); lab[ssw] = "sim_swap_fraud"
+    # The draws below are kept only so the random stream (and so T4, T1 and later tables) stays identical
+    # to earlier versions; their effect is undone straight after. Version 1 spread insider swaps over the
+    # whole year across 3 users and spread IMEI churn swaps over a year per number, so neither pattern
+    # stood out from normal traffic and both rules missed them (recall 0 at sample size).
+    keep = (ms.copy(), user.copy(), ch.copy(), T.copy())
     ins = rng.choice(np.setdiff1d(np.arange(n), ssw), k, replace=False)
-    user[ins] = rng.integers(0, 3, k); ch[ins] = "call_centre"
-    T[ins] = T[ins].astype("datetime64[D]") + rng.integers(0, 4 * 3600, k).astype("timedelta64[s]"); lab[ins] = "insider_sim_swap_or_access_abuse"
-    # imei_churn: one msisdn with many IMEI changes
+    user[ins] = rng.integers(0, 3, k)
+    T[ins] = T[ins].astype("datetime64[D]") + rng.integers(0, 4 * 3600, k).astype("timedelta64[s]")
     imc = rng.choice(np.setdiff1d(np.arange(n), np.concatenate([ssw, ins])), k, replace=False)
-    ms[imc] = rng.choice(rng.integers(0, n_sub, max(1, k // 8)), k); lab[imc] = "imei_churn"
+    ms[imc] = rng.choice(rng.integers(0, n_sub, max(1, k // 8)), k)
+    ms, user, ch, T = keep
+    sim = rng.integers(0, n_sub * 2, n)
+    old_imei = rng.integers(0, 10**8, n); new_imei = rng.integers(0, 10**8, n)
+    # Version 2 planting on a separate seeded stream, on rows that are not sim_swap_fraud plants.
+    prng = np.random.default_rng(cfg["seed"] + 100)
+    pool = prng.permutation(np.setdiff1d(np.arange(n), ssw))
+    n_ins = max(1, k // 8); n_imc = max(1, k // 6); pos = 0
+    for _ in range(n_ins):  # insider: one call centre user, 8 swaps on different numbers in one night (00:00 to 04:00)
+        rows = pool[pos:pos + 8]; pos += 8
+        day = T[rows[0]].astype("datetime64[D]")
+        user[rows] = prng.integers(0, 2000); ch[rows] = "call_centre"
+        T[rows] = day + np.sort(prng.integers(0, 4 * 3600, 8)).astype("timedelta64[s]")
+        lab[rows] = "insider_sim_swap_or_access_abuse"
+    for _ in range(n_imc):  # imei_churn: one number, 6 swaps within 30 days, each new IMEI becomes the next old IMEI
+        rows = pool[pos:pos + 6]; pos += 6
+        ms[rows] = prng.integers(0, n_sub)
+        T[rows] = T[rows[0]] + np.sort(prng.integers(0, 30 * 86400, 6)).astype("timedelta64[s]")
+        chain = prng.integers(0, 10**8, 7); old_imei[rows] = chain[:6]; new_imei[rows] = chain[1:]
+        lab[rows] = "imei_churn"
     w = Writer(out, "telecom", "T3_sims_and_sim_swap_events")
-    w.write(pd.DataFrame({"swap_id": ids_fast("TSW", np.arange(n)), "sim_id": ids_fast("TSIM", rng.integers(0, n_sub * 2, n)),
-                          "msisdn": ids_fast("TM", ms), "swap_time": T, "old_imei": ids_fast("TIMEI", rng.integers(0, 10**8, n)),
-                          "new_imei": ids_fast("TIMEI", rng.integers(0, 10**8, n)), "channel": ch,
+    w.write(pd.DataFrame({"swap_id": ids_fast("TSW", np.arange(n)), "sim_id": ids_fast("TSIM", sim),
+                          "msisdn": ids_fast("TM", ms), "swap_time": T, "old_imei": ids_fast("TIMEI", old_imei),
+                          "new_imei": ids_fast("TIMEI", new_imei), "channel": ch,
                           "performed_by_user": ids_fast("TU", user), "shop_id": ids_fast("TSHOP", rng.integers(0, 300, n)), LABEL: lab}))
     counts["T3_sims_and_sim_swap_events"] = w.rows
     swapped_ms, swapped_t = ms[ssw], T[ssw]
