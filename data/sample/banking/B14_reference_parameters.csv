@@ -1,0 +1,6 @@
+reference_type,code,description,limit_value,threshold_value,synthetic_scenario,synthetic
+mcc,REF000000000,synthetic reference row,,,,True
+country,REF000000001,synthetic reference row,,,,True
+threshold,REF000000002,synthetic reference row,10000.0,10000.0,,True
+channel,REF000000003,synthetic reference row,,,,True
+mcc,REF000000004,synthetic reference row,,,,True
