@@ -803,8 +803,8 @@
     {
      "path": "telecom/T8_interconnect_traffic/part_00000.parquet",
      "rows": 50000,
-     "bytes": 509885,
-     "sha256": "ae9b04ccb539026aa22c3b2e2908e8d456dcc77a6ce8000cbf7daf3b12f4fb7d"
+     "bytes": 324576,
+     "sha256": "5472c6616da983180b5e122896809fb5d1e2e3e012b8a4f48f8c461a27b5a4b8"
     }
    ]
   },

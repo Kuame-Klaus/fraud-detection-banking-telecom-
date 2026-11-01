@@ -502,6 +502,7 @@ def gen_telecom(cfg, scale, out, rng, chunk):
     # T1 CDRs
     w = Writer(out, "telecom", "T1_cdrs")
     total, off = R["T1_cdrs"], 0
+    route_min = np.zeros(n_routes)  # T1 minutes per route, so T8 can settle against them
     while off < total:
         n = min(chunk, total - off)
         caller = rng.integers(0, n_sub, n); callee = rng.integers(0, n_sub, n); T = ts(rng, n)
@@ -520,7 +521,7 @@ def gen_telecom(cfg, scale, out, rng, chunk):
             lab[s:s + 20] = "subscription_and_bust_out"
         for s in plant_blocks(rng, n, PLANT_SHARE, 20):  # interconnect_leakage: traffic on routes 37 to 39 (unsettled in T8)
             route[s:s + 20] = rng.integers(37, 40, 20); lab[s:s + 20] = "interconnect_leakage"
-        chg = np.round(dur * 0.002, 4)
+        chg = np.round(dur * 0.002, 4); route_min += np.bincount(route, weights=dur, minlength=n_routes) / 60
         w.write(pd.DataFrame({"cdr_id": ids_fast("TC", np.arange(off, off + n)), "caller": ids_fast("TM", caller),
                               "callee": ids_fast("TM", callee), "start_time": T, "duration_sec": dur, "call_type": ct,
                               "cell_id": ids_fast("TCELL", cell), "route": ids_fast("TR", route), "imsi": ids_fast("TIMSI", caller),
@@ -573,6 +574,12 @@ def gen_telecom(cfg, scale, out, rng, chunk):
     # T8 interconnect traffic per route and day; routes 37 to 39 under settled
     n = R["T8_interconnect_traffic"]; d = PERIOD_START.astype("datetime64[D]") + rng.integers(0, 365, n).astype("timedelta64[D]")
     rt = rng.integers(0, n_routes, n); mins = np.round(rng.uniform(1000, 20000, n), 1)
+    # Settled minutes follow T1: each route's T1 minutes are split over its T8 rows in proportion to the drawn values,
+    # times a settled share of 0.97 to 1.0 for normal routes and 0.6 for leakage routes 37 to 39 (separate RNG, so
+    # every other table keeps its bytes).
+    share = np.random.default_rng(cfg["seed"] + 200).uniform(0.97, 1.0, n_routes); share[37:] = 0.6
+    tot = np.bincount(rt, weights=mins, minlength=n_routes)
+    mins = np.floor(mins / np.where(tot[rt] > 0, tot[rt], 1) * route_min[rt] * share[rt] * 10) / 10
     settle = np.round(mins * 0.01, 2); lab = np.where(rt >= 37, "interconnect_leakage", "").astype(object)
     settle[rt >= 37] = np.round(settle[rt >= 37] * 0.4, 2)
     w = Writer(out, "telecom", "T8_interconnect_traffic")
