@@ -15,6 +15,15 @@ def split(t: pd.Series) -> np.ndarray:
     return np.where(t < TRAIN_END, "train", np.where(t < VALID_END, "validation", "test"))
 
 
+def fit(Xtr, ytr, Xva, yva, seed: int = 42):
+    pos = max(1, int(ytr.sum()))
+    clf = xgb.XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8,
+                            tree_method="hist", scale_pos_weight=(len(ytr) - pos) / pos, eval_metric="aucpr",
+                            early_stopping_rounds=30, random_state=seed, n_jobs=-1)
+    clf.fit(Xtr, ytr, eval_set=[(Xva, yva)], verbose=False)
+    return clf
+
+
 def fit_score(df: pd.DataFrame, feats: list[str], tcol: str, seed: int = 42):
     y = (df["synthetic_scenario"] != "").astype(int).to_numpy()
     sp = split(df[tcol])

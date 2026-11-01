@@ -139,14 +139,22 @@ def leak(d):
 
 @rule("insider_sim_swap_or_access_abuse", "R_T09", "T3", "performed_by_user", "user", "swap_time", None)
 def insider(d):
+    """5 or more night swaps (00:00 to 05:00 UTC) by one user on one night. ASSUMPTION threshold."""
     night = d["swap_time"].dt.hour < 5
-    c = night.groupby(d["performed_by_user"]).transform("sum")
-    return night & (c >= c.quantile(0.999))
+    c = night.groupby([d["performed_by_user"], d["swap_time"].dt.floor("D")]).transform("sum")
+    return night & (c >= 5)
 
 
 @rule("imei_churn", "R_T10", "T3", "msisdn", "msisdn", "swap_time", None)
 def imei(d):
-    return d.groupby("msisdn")["swap_id"].transform("size") >= 4
+    """4 or more swaps on one number within 30 days. ASSUMPTION threshold."""
+    x = d.sort_values(["msisdn", "swap_time"])
+    g = x.groupby("msisdn")["swap_time"]
+    start = (g.shift(-3) - x["swap_time"]) <= pd.Timedelta(days=30)
+    flag = start.copy()
+    for k in (1, 2, 3):
+        flag |= start.groupby(x["msisdn"]).shift(k).fillna(False).astype(bool)
+    return flag.reindex(d.index)
 
 
 @rule("recharge_fraud", "R_T11", "T7", "msisdn", "msisdn", "event_time", "amount")
@@ -182,3 +190,10 @@ def benford(d):
 @rule("privileged_access_before_journals", "R_B12", "B7", "preparer_id", "user", "entry_timestamp", "debit")
 def privileged(d):
     return d["preparer_id"].isin(d.attrs.get("privileged_users", [])) & d["is_manual"]
+
+
+def leaky_routes_from(t1_minutes_by_route: pd.Series, t8: pd.DataFrame) -> list[str]:
+    """Same test as leaky_routes, from T1 minutes per route summed incrementally across chunks."""
+    s = t8.groupby("route")["settlement_amount"].sum() / t8.groupby("route")["minutes"].sum()
+    ratio = s.reindex(t1_minutes_by_route.index)
+    return list(ratio[ratio < 0.6 * ratio.median()].index)

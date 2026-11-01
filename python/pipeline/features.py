@@ -53,7 +53,9 @@ BANK_FEATURES = ["log_amount", "hour", "weekday", "secs_since_prev", "secs_to_ne
                  "channel_card", "channel_mobile", "channel_web", "channel_branch", "channel_atm"]
 
 
-def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, t3: pd.DataFrame) -> pd.DataFrame:
+def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, last_swap: pd.Series, agent_day: pd.Series | None = None) -> pd.DataFrame:
+    """last_swap: latest swap_time per msisdn from T3. agent_day: global row count per (agent_id, day),
+    built incrementally across chunks, so a wallet bucket still sees each agent's whole day."""
     df = _entity_window(t4, "wallet_id", "timestamp", "amount")
     df["hour"] = df["timestamp"].dt.hour; df["weekday"] = df["timestamp"].dt.weekday
     df["log_amount"] = np.log1p(df["amount"])
@@ -63,11 +65,14 @@ def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, t3: pd.DataFrame) -> pd
     df["wallet_dormant"] = df["wallet_id"].map(w["status"].eq("dormant")).fillna(False).astype(int)
     df["round_amount"] = (df["amount"] % 100 == 0).astype(int)
     df["has_reversal"] = df["reversal_of"].fillna("").ne("").astype(int)
-    df["agent_day_count"] = df.groupby(["agent_id", "day"])["amount"].transform("size")
+    if agent_day is None:
+        df["agent_day_count"] = df.groupby(["agent_id", "day"])["amount"].transform("size")
+    else:
+        idx = pd.MultiIndex.from_arrays([df["agent_id"], df["day"]])
+        df["agent_day_count"] = agent_day.reindex(idx).fillna(0).to_numpy()
     # hours since the latest SIM swap on the wallet's msisdn (within domain only)
     ms = df["wallet_id"].map(w["msisdn"])
-    last = t3.groupby("msisdn")["swap_time"].max()
-    swap_t = ms.map(last)
+    swap_t = ms.map(last_swap)
     hrs = (df["timestamp"] - swap_t).dt.total_seconds() / 3600
     df["hours_since_swap"] = hrs.where(hrs >= 0, 1e5).fillna(1e5).clip(upper=1e5)
     for x in ["p2p", "cash_in", "cash_out", "merchant", "airtime"]:

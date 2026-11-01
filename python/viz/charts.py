@@ -113,13 +113,101 @@ def dq_page(d, out):
 
 
 def runtime(d, out):
-    r = d[(d.record_type == "run") & (d.stage != "total")]
+    r = d[(d.record_type == "run") & ~d.stage.isin(["total", "data_quality"])]
     fig, ax = plt.subplots(figsize=(7, 3)); ax.bar(r.stage, r.runtime_seconds.astype(float))
     ax.set_ylabel("seconds"); ax.set_title("Python stage runtime (measured)")
     return _save(fig, out, "11_runtime.png")
 
 
-ALL = [kpi_overview, detection_heatmap, pr_and_confusion, alert_trends, hour_weekday, benford, dq_page, runtime]
+def leaderboards(d, out):
+    s = d[(d.record_type == "score") & (d.predicted_label == 1)]
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    for ax, dom in zip(axes, ("banking", "telecom")):
+        x = s[s.domain == dom]
+        g = x.groupby(["entity_type", "entity_id"]).agg(alerts=("score", "size"), amount=("amount", "sum"),
+                                                        planted=("true_label", "max")).reset_index()
+        ms = d[(d.record_type == "score") & (d.model == "xgboost") & (d.domain == dom)].groupby("entity_id")["score"].max()
+        g["max_score"] = g.entity_id.map(ms).fillna(0)
+        g = g[g.entity_type.isin(["account", "wallet"])].sort_values(["alerts", "amount"], ascending=False).head(15)[::-1]
+        colors = ["#d62728" if p == 1 else "#1f77b4" for p in g.planted]
+        ax.barh(g.entity_id.astype(str), g.alerts, color=colors)
+        for i, (a_, m) in enumerate(zip(g.amount, g.max_score)):
+            ax.text(a_ if False else g.alerts.iloc[i], i, f"  max model score {m:.2f}, amount {a_:,.0f}", va="center", fontsize=6)
+        ax.set_xlabel("alerts (rules and model)"); ax.set_title(f"Risk leaderboard, {dom} (red = has planted case)")
+        ax.tick_params(axis="y", labelsize=6)
+    return _save(fig, out, "05_risk_leaderboards.png")
+
+
+def networks(d, out, top=12):
+    e = d[d.record_type == "edge"]
+    fig, axes = plt.subplots(1, 2, figsize=(13, 6.5))
+    for ax, (dom, label) in zip(axes, (("banking", "mule network (accounts)"), ("telecom", "agent network (agent to wallets)"))):
+        x = e[e.domain == dom]
+        hubs = x.groupby("source_id")["edge_weight"].sum().sort_values(ascending=False).head(top).index
+        x = x[x.source_id.isin(hubs)]
+        ang = np.linspace(0, 2 * np.pi, len(hubs), endpoint=False)
+        pos = {h: (np.cos(a) * 3, np.sin(a) * 3) for h, a in zip(hubs, ang)}
+        wmax = x.edge_weight.max() if len(x) else 1
+        for h, a in zip(hubs, ang):
+            tg = x[x.source_id == h]
+            ta = a + np.linspace(-0.35, 0.35, max(len(tg), 1))
+            for (_, r), b in zip(tg.iterrows(), ta):
+                tx, ty = np.cos(b) * 4.6, np.sin(b) * 4.6
+                ax.plot([pos[h][0], tx], [pos[h][1], ty], color="grey", lw=0.3 + 2.5 * r.edge_weight / wmax, alpha=0.6)
+                ax.scatter(tx, ty, s=8, color="#1f77b4")
+            ax.scatter(*pos[h], s=60, color="#d62728", zorder=3)
+            ax.annotate(str(h), pos[h], fontsize=6, ha="center", va="bottom")
+        ax.set_title(f"{label}: top {len(hubs)} hubs by amount"); ax.axis("off"); ax.set_aspect("equal")
+    return _save(fig, out, "06_networks.png")
+
+
+def threshold_slider(d, out):
+    t = d[d.record_type == "threshold"]
+    fig, axes = plt.subplots(1, 2, figsize=(12, 3.8))
+    for ax, dom in zip(axes, ("banking", "telecom")):
+        x = t[t.domain == dom].sort_values("threshold_change_pct")
+        ax.plot(x.threshold_change_pct, x.alert_count, "o-", label="alerts")
+        ax.plot(x.threshold_change_pct, x.detected_count, "s-", label="planted cases detected")
+        ax.set_xlabel("threshold change (percent)"); ax.set_title(f"Threshold sensitivity, {dom} XGBoost test split"); ax.legend()
+    p = _save(fig, out, "09_threshold_sensitivity.png")
+    # interactive page: alerts and detections for any threshold, from the scored test rows
+    import json
+    s = d[(d.record_type == "score") & (d.model == "xgboost")]
+    data = {}
+    grid = np.round(np.linspace(0, 1, 201), 3)
+    for dom in ("banking", "telecom"):
+        x = s[s.domain == dom]
+        sc = x.score.to_numpy(dtype=float); y = x.true_label.to_numpy(dtype=int)
+        data[dom] = {"grid": grid.tolist(), "alerts": [int((sc >= g).sum()) for g in grid],
+                     "detected": [int(((sc >= g) & (y == 1)).sum()) for g in grid], "planted": int(y.sum()),
+                     "current": float(x.threshold.iloc[0]) if len(x) else 0.5}
+    html = """<!doctype html><html><head><meta charset="utf-8"><title>Threshold slider (SYNTHETIC data, Klaus Konsults)</title>
+<style>body{font-family:sans-serif;margin:2em}td{padding:4px 10px}</style></head><body>
+<h2>Threshold slider, XGBoost test split</h2><p>SYNTHETIC data, Klaus Konsults. Move the slider to see alerts and planted cases detected.</p>
+<div id="ui"></div><script>
+const D = DATA;
+const ui = document.getElementById('ui');
+for (const dom of Object.keys(D)) {
+  const d = D[dom]; const div = document.createElement('div');
+  div.innerHTML = `<h3>${dom}</h3><input type="range" min="0" max="${d.grid.length-1}" value="${Math.round(d.current*200)}" style="width:400px">
+  <table><tr><td>threshold</td><td class="t"></td></tr><tr><td>alerts</td><td class="a"></td></tr>
+  <tr><td>planted detected</td><td class="d"></td></tr><tr><td>recall</td><td class="r"></td></tr><tr><td>precision</td><td class="p"></td></tr></table>`;
+  ui.appendChild(div);
+  const s = div.querySelector('input');
+  const upd = () => { const i = +s.value; const a = d.alerts[i], k = d.detected[i];
+    div.querySelector('.t').textContent = d.grid[i].toFixed(3); div.querySelector('.a').textContent = a;
+    div.querySelector('.d').textContent = k + ' of ' + d.planted;
+    div.querySelector('.r').textContent = d.planted ? (k/d.planted).toFixed(3) : 'n/a';
+    div.querySelector('.p').textContent = a ? (k/a).toFixed(3) : 'n/a'; };
+  s.oninput = upd; upd();
+}
+</script></body></html>""".replace("DATA", json.dumps(data))
+    (out / "09_threshold_slider.html").write_text(html)
+    return p
+
+
+ALL = [kpi_overview, detection_heatmap, pr_and_confusion, alert_trends, leaderboards, networks, hour_weekday, benford,
+       threshold_slider, dq_page, runtime]
 
 
 def main(argv=None):
@@ -127,7 +215,12 @@ def main(argv=None):
     ap.add_argument("--results", default="outputs/sample/results_python_sample.parquet")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
-    res = Path(a.results); d = pd.read_parquet(res) if res.suffix == ".parquet" else pd.read_csv(res, low_memory=False)
+    res = Path(a.results)
+    cols = ["record_type", "domain", "dataset_id", "scenario", "model", "split", "entity_id", "entity_type", "event_timestamp",
+            "month", "score", "threshold", "predicted_label", "true_label", "amount", "metric", "value", "step", "check_name",
+            "expected", "observed", "passed", "threshold_change_pct", "alert_count", "detected_count", "source_id", "target_id",
+            "edge_weight", "edge_count", "first_digit", "observed_count", "expected_share", "runtime_seconds", "stage"]
+    d = pd.read_parquet(res, columns=cols) if res.suffix == ".parquet" else pd.read_csv(res, usecols=cols, low_memory=False)
     out = Path(a.out) if a.out else res.parent / "charts"; out.mkdir(parents=True, exist_ok=True)
     paths = [f(d, out) for f in ALL]
     for p in paths:
