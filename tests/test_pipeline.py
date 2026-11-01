@@ -124,3 +124,25 @@ def test_insider_and_imei_rules_catch_plants(data):
     for f, s in [(rules.insider, "insider_sim_swap_or_access_abuse"), (rules.imei, "imei_churn")]:
         flag = f(d).astype(bool); y = d["synthetic_scenario"] == s
         assert y.sum() > 0 and (flag & y).sum() == y.sum()
+
+
+def test_model_detected_matches_recall(data, tmp_path):
+    out, _ = data
+    d = pd.read_parquet(run.main(["--data", str(out), "--out", str(tmp_path / "o"), "--run-id", "det"]))
+    m = d[(d.record_type == "metric") & (d.model == "xgboost") & (d.scenario == "all")]
+    for (dom, sp), g in m.groupby(["domain", "split"]):
+        v = g.set_index("metric")["value"]
+        if "recall" in v:
+            assert v["detected"] == round(v["recall"] * v["positives"])
+
+
+def test_leakage_rule_route_day(data):
+    from python.pipeline import rules
+    out, _ = data
+    t1 = pd.read_parquet(out / "telecom/T1_cdrs"); t8 = pd.read_parquet(out / "telecom/T8_interconnect_traffic")
+    assert t8["route"].nunique() == t1["route"].nunique()  # every route has a settlement row
+    m = t1.groupby([t1["route"], pd.to_datetime(t1["start_time"], utc=True).dt.strftime("%Y-%m-%d").rename("day")])["duration_sec"].sum() / 60
+    g = rules.leak_route_day(m, t8)
+    y = g["synthetic_scenario"] == "interconnect_leakage"
+    assert y.sum() > 0 and (g["flag"] & y).sum() == y.sum()
+    assert (g.loc[~y, "unsettled_minutes"] >= 0).all() and (g.loc[y, "unsettled_share"] > 0.35).all()
