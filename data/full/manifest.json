@@ -557,8 +557,8 @@
     {
      "path": "telecom/T3_sims_and_sim_swap_events/part_00000.parquet",
      "rows": 1100000,
-     "bytes": 29462706,
-     "sha256": "232e23e65b74e2c918e31a129d83970b7213bd4f3222e2584156d9526718cc6a"
+     "bytes": 29463611,
+     "sha256": "a0038dc9efceb7490e8fd12e686b630f7fcb643d2124bbb0ac19c5b564c9a72e"
     }
    ]
   },
