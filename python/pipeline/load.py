@@ -18,7 +18,7 @@ def discover(data_dir: Path) -> dict[str, tuple[str, Path]]:
         d = data_dir / domain
         if not d.exists():
             continue
-        for p in sorted(d.iterdir()):
+        for p in sorted(x for x in d.iterdir() if x.is_dir() or x.suffix == ".csv"):
             name = p.stem if p.suffix == ".csv" else p.name
             found[name] = (domain, p)
     return found
@@ -33,9 +33,29 @@ def read(path: Path, columns=None) -> pd.DataFrame:
         if "synthetic_scenario" in df:
             df["synthetic_scenario"] = df["synthetic_scenario"].fillna("")
         return df
+    manifest = path.parent.parent / "manifest.json"
+    if manifest.exists():
+        return read_manifest_dataset(path.parent.parent, path.name, columns=columns)
     return pd.read_parquet(path, columns=columns)
 
 
 def control_totals(name: str, df: pd.DataFrame) -> dict:
     col = AMOUNT_COLS.get(name)
     return {"rows": len(df), "amount_col": col or "", "amount_sum": float(df[col].sum()) if col else None}
+
+
+def read_manifest_dataset(full_dir: Path, name: str, verify: bool = False, columns=None) -> pd.DataFrame:
+    """Combine every part listed in data/full/manifest.json for one dataset (optionally checking SHA256)."""
+    import hashlib
+    import json
+    m = json.loads((Path(full_dir) / "manifest.json").read_text())["datasets"][name]
+    frames = []
+    for p in m["parts"]:
+        f = Path(full_dir) / p["path"]
+        if verify and hashlib.sha256(f.read_bytes()).hexdigest() != p["sha256"]:
+            raise ValueError(f"checksum mismatch: {f}")
+        frames.append(pd.read_parquet(f, columns=columns))
+    df = pd.concat(frames, ignore_index=True)
+    if len(df) != m["rows"] and columns is None:
+        raise ValueError(f"{name}: expected {m['rows']} rows, read {len(df)}")
+    return df

@@ -40,5 +40,7 @@ Thumbs.db
 !data/sample/**
 !outputs/sample/
 !outputs/sample/**
+!data/full/
+!data/full/**
 dist/
 !config/sources.csv

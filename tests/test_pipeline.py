@@ -77,9 +77,15 @@ def test_pipeline_and_charts(data, tmp_path):
     assert len(charts.main(["--results", str(path), "--out", str(tmp_path / "c")])) == 8
 
 
-def test_release_package_splits(data, tmp_path):
-    out, _ = data
-    generate.package_release(out, tmp_path / "rel", part_bytes=1_000_000)
+def test_export_full_parts_and_manifest(data, tmp_path):
     import json
-    m = json.loads((tmp_path / "rel/manifest.json").read_text())
-    assert len(m["parts"]) > 1 and all(p["bytes"] <= 1_000_000 for p in m["parts"])
+    from python.pipeline import load
+    out, counts = data
+    generate.export_full(out, tmp_path / "full")
+    m = json.loads((tmp_path / "full/manifest.json").read_text())
+    assert len(m["datasets"]) == 26
+    for name, d in m["datasets"].items():
+        assert d["rows"] == counts[name]
+        assert all(p["bytes"] <= generate.MAX_PART_BYTES for p in d["parts"])
+    b1 = load.read_manifest_dataset(tmp_path / "full", "B1_transactions", verify=True)
+    assert len(b1) == counts["B1_transactions"]

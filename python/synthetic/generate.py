@@ -593,38 +593,38 @@ def export_csv(src: Path, dst: Path) -> None:
             pd.read_parquet(d).to_csv(dst / domain / f"{d.name}.csv", index=False, date_format="%Y-%m-%dT%H:%M:%SZ")
 
 
-RELEASE_PART_BYTES = 2 * 1024**3  # GitHub Release asset limit is 2 GiB per file
+MAX_PART_BYTES = 90 * 1024**2  # stay well under GitHub's 100 MB per file limit
 
 
-def package_release(src: Path, dst: Path, part_bytes: int = RELEASE_PART_BYTES) -> Path:
-    """Tar the generated data and split it into parts of at most part_bytes, with a manifest and checksums.
-    This only prepares files locally; it never creates or publishes a release."""
+def export_full(src: Path, dst: Path, zstd_level: int = 9) -> Path:
+    """Rewrite generated data as numbered zstd Parquet parts (each 90 MB or less) plus data/full/manifest.json
+    with row counts and SHA256 checksums, so the full SYNTHETIC dataset can be committed to git."""
     import hashlib
     import json
-    import tarfile
-    dst.mkdir(parents=True, exist_ok=True)
-    tar_path = dst / "synthetic_full.tar"
-    with tarfile.open(tar_path, "w") as tf:
-        tf.add(src, arcname="synthetic")
-    parts, i = [], 0
-    with open(tar_path, "rb") as f:
-        while True:
-            name = dst / f"synthetic_full.tar.part{i:03d}"
-            h, written = hashlib.sha256(), 0
-            with open(name, "wb") as o:
-                while written < part_bytes:
-                    buf = f.read(min(64 * 1024**2, part_bytes - written))
-                    if not buf:
-                        break
-                    o.write(buf); h.update(buf); written += len(buf)
-            if written == 0:
-                name.unlink(); break
-            parts.append({"file": name.name, "bytes": written, "sha256": h.hexdigest()}); i += 1
-    tar_path.unlink()
-    manifest = {"label": "SYNTHETIC data, Klaus Konsults", "reassemble": "cat synthetic_full.tar.part* > synthetic_full.tar && tar -xf synthetic_full.tar",
-                "parts": parts, "row_counts": json.loads((src / "row_counts.json").read_text())}
-    (dst / "manifest.json").write_text(json.dumps(manifest, indent=2))
-    (dst / "SHA256SUMS").write_text("".join(f"{p['sha256']}  {p['file']}\n" for p in parts))
+    if dst.exists():
+        shutil.rmtree(dst)
+    manifest = {"label": "SYNTHETIC data, Klaus Konsults", "format": "parquet", "compression": f"zstd level {zstd_level}",
+                "max_part_bytes": MAX_PART_BYTES, "datasets": {}}
+    for domain in ("banking", "telecom"):
+        for d in sorted((src / domain).iterdir()):
+            out = dst / domain / d.name; out.mkdir(parents=True)
+            parts, i = [], 0
+            for f in sorted(d.glob("*.parquet")):
+                tbl = pq.read_table(f)
+                pieces = [tbl]
+                while pieces:
+                    t = pieces.pop(0)
+                    name = out / f"part_{i:05d}.parquet"
+                    pq.write_table(t, name, compression="zstd", compression_level=zstd_level)
+                    if name.stat().st_size > MAX_PART_BYTES and t.num_rows > 1:
+                        name.unlink(); h = t.num_rows // 2
+                        pieces[:0] = [t.slice(0, h), t.slice(h)]
+                        continue
+                    sha = hashlib.sha256(name.read_bytes()).hexdigest()
+                    parts.append({"path": f"{domain}/{d.name}/{name.name}", "rows": t.num_rows,
+                                  "bytes": name.stat().st_size, "sha256": sha}); i += 1
+            manifest["datasets"][d.name] = {"domain": domain, "rows": sum(p["rows"] for p in parts), "parts": parts}
+    (dst / "manifest.json").write_text(json.dumps(manifest, indent=1))
     return dst
 
 
@@ -634,13 +634,20 @@ def main(argv=None) -> dict:
     ap.add_argument("--scale", type=float, default=None, help="override scale, sample default is 0.001")
     ap.add_argument("--out", default=None)
     ap.add_argument("--export-csv", default=None, help="also write one CSV per dataset to this folder (e.g. data/sample)")
-    ap.add_argument("--package-release", default=None,
-                    help="package the generated data for a GitHub Release into this folder (parts of 2 GB or less, "
-                         "manifest and SHA256 checksums). Nothing is uploaded or published.")
+    ap.add_argument("--export-full", default=None, help="write committed full parts and manifest to this folder (e.g. data/full)")
+    ap.add_argument("--reuse", action="store_true", help="skip generation and reuse data already in the output folder")
     args = ap.parse_args(argv)
     cfg = load_config()
     scale = args.scale if args.scale is not None else (1.0 if args.mode == "full" else 0.0025)
     out = Path(args.out) if args.out else ROOT / cfg["output_dir"] / args.mode
+    if args.reuse and (out / "row_counts.json").exists():
+        import json
+        counts = json.loads((out / "row_counts.json").read_text())
+        if args.export_csv:
+            export_csv(out, Path(args.export_csv))
+        if args.export_full:
+            export_full(out, Path(args.export_full))
+        return counts
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
@@ -654,8 +661,8 @@ def main(argv=None) -> dict:
     pd.Series(counts, name="rows").to_json(out / "row_counts.json")
     if args.export_csv:
         export_csv(out, Path(args.export_csv))
-    if args.package_release:
-        package_release(out, Path(args.package_release))
+    if args.export_full:
+        export_full(out, Path(args.export_full))
     for k, v in counts.items():
         print(f"{k}\t{v}")
     print(f"generate_seconds\t{secs:.1f}")

@@ -18,3 +18,14 @@ These are step by step notes and a config, not a packaged .yxmd workflow. A vali
 4. Scenario rules: one Filter tool per rule, matching python/pipeline/rules.py (same rule_id values and ASSUMPTION thresholds).
 5. Model: Boosted Model or Forest Model tool, trained on rows before 2025-10-01, validated on October, tested on November and December (same time split as Python).
 6. Output: Select and Formula tools to shape rows into docs/output_schema.md, stack = alteryx, written to outputs/alteryx/results_<run_id>.csv.
+
+## Full data from the repo (data/full)
+
+The full SYNTHETIC dataset is committed under data/full/<domain>/<dataset>/part_00000.parquet, part_00001.parquet and so on (zstd Parquet, each part 90 MB or less). data/full/manifest.json lists every part with its row count and SHA256 checksum.
+
+1. Clone the repo (raw URLs are not practical for 20 million rows).
+2. Add an Input Data tool and set the file path to a wildcard, for example `C:\repo\data\full\banking\B1_transactions\part_*.parquet`. Input Data unions every matching file into one stream (Parquet input needs Designer 2023.1 or later).
+3. Tick "Output File Name as Field" if you want the part name kept for checks.
+4. Compare the row count with the `rows` value for that dataset in data/full/manifest.json.
+
+This has not been run in Alteryx here.

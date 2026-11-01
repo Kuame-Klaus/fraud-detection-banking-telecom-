@@ -77,7 +77,7 @@ Further detail:
 * alteryx/ : Alteryx workflows (.yxmd).
 * knime/ : KNIME workflows (.knwf).
 * powerbi/ : the same 12 charts, planned only.
-* data/ : local data, ignored by git, except data/sample/ which holds the committed SYNTHETIC sample CSVs.
+* data/ : local data, ignored by git, except data/sample/ (SYNTHETIC sample CSVs) and data/full/ (full SYNTHETIC dataset in Parquet parts with a manifest).
 * outputs/ : local scores, metrics and charts, ignored by git, except outputs/sample/ which holds the sample results and charts.
 * docs/sql/additions/ : provisional default SQL, kept apart from the pack SQL.
 * docs/ : data dictionary, scenario coverage, pipeline steps, output schema, engagement rules, SQL templates, prompts and open questions.
@@ -149,6 +149,16 @@ Shared results file (all charts read this):
 
 https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/outputs/sample/results_latest.csv
 
+### Full data (about 20 million rows in B1, T1 and T4)
+
+The full SYNTHETIC dataset is committed in data/full/ as numbered zstd Parquet parts (each 90 MB or less), with data/full/manifest.json listing every part, its row count and its SHA256 checksum. Clone the repo to use it.
+
+* Python: `python.pipeline.load.read_manifest_dataset("data/full", "B1_transactions", verify=True)` reads and combines every part in the manifest; `make pipeline-committed-full` runs the whole pipeline on it.
+* Alteryx: one Input Data tool with a wildcard path such as `data/full/banking/B1_transactions/part_*.parquet`.
+* KNIME: Parquet Reader in folder mode on the dataset folder, or List Files/Folders plus a loop.
+
+Details are in alteryx/BUILD_NOTES.md and knime/BUILD_NOTES.md.
+
 ### Alteryx
 
 1. Read config/sources.csv, pick the dataset, and pass its raw_url to a Download tool, then parse the CSV.
@@ -175,7 +185,7 @@ https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/m
 3. `make charts` draws the charts into outputs/sample/charts.
 4. `make test` runs the tests.
 5. `make full` generates full size data locally under data/synthetic/full (ignored by git), then `make pipeline-full`.
-6. `make release` packages full data into parts of 2 GB or less with a manifest and SHA256 checksums under dist/release. It does not create or publish a GitHub Release.
+6. `make full-export` rewrites locally generated full data into the committed data/full parts and manifest.
 7. pandas can also read a raw URL directly: `pd.read_csv("https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/data/sample/banking/B1_transactions.csv")`.
 
 ## Credits

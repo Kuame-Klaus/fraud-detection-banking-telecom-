@@ -1,7 +1,7 @@
 # Klaus Konsults fraud detection, Python stack. All data is SYNTHETIC.
 PY ?= python
 
-.PHONY: install sample full pipeline pipeline-full charts test release
+.PHONY: install sample full full-export pipeline pipeline-full pipeline-committed-full charts test
 
 install:
 	$(PY) -m pip install -r requirements.txt
@@ -21,8 +21,11 @@ full:            ## full size (about 20M rows for B1, T1, T4); needs several GB 
 pipeline-full:
 	$(PY) -m python.pipeline.run --data data/synthetic/full --out outputs/full --run-id python_full
 
-release:         ## package full data into parts of 2 GB or less with manifest and checksums (does not publish)
-	$(PY) -m python.synthetic.generate --mode full --package-release dist/release
+full-export:     ## rewrite full data as zstd parts of 90 MB or less plus data/full/manifest.json (committed)
+	$(PY) -m python.synthetic.generate --mode full --reuse --export-full data/full
+
+pipeline-committed-full:  ## run on the committed full parts
+	$(PY) -m python.pipeline.run --data data/full --out outputs/full --run-id python_full
 
 test:
 	$(PY) -m pytest -q tests
