@@ -2,7 +2,7 @@
 data/raw/
 data/partner/
 data/synthetic/
-outputs/
+outputs/*
 
 # Secrets and keys
 .env
@@ -41,3 +41,4 @@ Thumbs.db
 !outputs/sample/
 !outputs/sample/**
 dist/
+!config/sources.csv
