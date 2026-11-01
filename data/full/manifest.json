@@ -1,0 +1,824 @@
+{
+ "label": "SYNTHETIC data, Klaus Konsults",
+ "format": "parquet",
+ "compression": "zstd level 9",
+ "max_part_bytes": 94371840,
+ "datasets": {
+  "B10_vendors_and_payments": {
+   "domain": "banking",
+   "rows": 100000,
+   "parts": [
+    {
+     "path": "banking/B10_vendors_and_payments/part_00000.parquet",
+     "rows": 100000,
+     "bytes": 2593777,
+     "sha256": "c7d4687e035bfef7e94d3af94212f5d1ed2ba8c8c5d7dd3fb7b848c6c42cf2db"
+    }
+   ]
+  },
+  "B11_payroll_and_hr": {
+   "domain": "banking",
+   "rows": 72000,
+   "parts": [
+    {
+     "path": "banking/B11_payroll_and_hr/part_00000.parquet",
+     "rows": 72000,
+     "bytes": 530886,
+     "sha256": "256392fdde7d22bd785c90a4c564db0a604a163772e46796ded9aa5aaa58bdb3"
+    }
+   ]
+  },
+  "B12_fraud_cases": {
+   "domain": "banking",
+   "rows": 20000,
+   "parts": [
+    {
+     "path": "banking/B12_fraud_cases/part_00000.parquet",
+     "rows": 20000,
+     "bytes": 556611,
+     "sha256": "5e33bae4c339b980ec0e7e74049caeb1e031207b6175c931057d968e30d8caf3"
+    }
+   ]
+  },
+  "B13_existing_alerts": {
+   "domain": "banking",
+   "rows": 200000,
+   "parts": [
+    {
+     "path": "banking/B13_existing_alerts/part_00000.parquet",
+     "rows": 200000,
+     "bytes": 3231471,
+     "sha256": "58f8e098e79372169e85f7e62d4a5b48d653b85bda41dce604984ca9306cd8aa"
+    }
+   ]
+  },
+  "B14_reference_parameters": {
+   "domain": "banking",
+   "rows": 2000,
+   "parts": [
+    {
+     "path": "banking/B14_reference_parameters/part_00000.parquet",
+     "rows": 2000,
+     "bytes": 8463,
+     "sha256": "1f0befbbd48d70c64cc0c23d98a281350ddaf12af254be20feadc67923186389"
+    }
+   ]
+  },
+  "B1_transactions": {
+   "domain": "banking",
+   "rows": 20000000,
+   "parts": [
+    {
+     "path": "banking/B1_transactions/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 28952076,
+     "sha256": "e89ea180c41d727370f0808a7effc015cf7c001b4fb00088af70e43ad9d8187d"
+    },
+    {
+     "path": "banking/B1_transactions/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 28983247,
+     "sha256": "6a1b90a632a2178e8d4a4c54146a26846ca1a0a94854cb6e0dd48ef0fb92c434"
+    },
+    {
+     "path": "banking/B1_transactions/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 28980691,
+     "sha256": "673f375e417e679ba4f5914daef4ca5a6b37c004a88d6a06540f3cee05ce1b3d"
+    },
+    {
+     "path": "banking/B1_transactions/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 28966336,
+     "sha256": "6c8ea3f44efea7ee7febfadbcf97b1ac832d770cdb910722c5f77a2bfcfe24af"
+    },
+    {
+     "path": "banking/B1_transactions/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 29018747,
+     "sha256": "f8771d1171460059150f2d01697ffc69570035a0a71df816298d946730f480a0"
+    },
+    {
+     "path": "banking/B1_transactions/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 28950255,
+     "sha256": "2135bf6f839b870a3537878007589b8c207451e4be2e78f678b5be46d8c9767d"
+    },
+    {
+     "path": "banking/B1_transactions/part_00006.parquet",
+     "rows": 1000000,
+     "bytes": 28983244,
+     "sha256": "3022f3b499293fb07897c5c8ea727ec6a18777c68a26e9a8718f8f90b8d9407a"
+    },
+    {
+     "path": "banking/B1_transactions/part_00007.parquet",
+     "rows": 1000000,
+     "bytes": 28997367,
+     "sha256": "6309b977d4addf69ccc1d6efe7cad6a883393e5b175b6f6fd2630c4f19bd809f"
+    },
+    {
+     "path": "banking/B1_transactions/part_00008.parquet",
+     "rows": 1000000,
+     "bytes": 28948651,
+     "sha256": "c5d0c0cd6379c1bffc2966b10f3be2d3c4d8168b0230aa25d3a796d187e1fcc2"
+    },
+    {
+     "path": "banking/B1_transactions/part_00009.parquet",
+     "rows": 1000000,
+     "bytes": 28977645,
+     "sha256": "b497d2844d6593db77fca013b5e72b1628fc0a91f29c2f58f0ee4354de230f14"
+    },
+    {
+     "path": "banking/B1_transactions/part_00010.parquet",
+     "rows": 1000000,
+     "bytes": 28970349,
+     "sha256": "0a41e921682fb9268114a5028bd78a306170152334659b225848a1c161f85de7"
+    },
+    {
+     "path": "banking/B1_transactions/part_00011.parquet",
+     "rows": 1000000,
+     "bytes": 28960207,
+     "sha256": "0f4b32825e68038e79e423666df610fac7228bcb8fb8866999af96f3c197cc81"
+    },
+    {
+     "path": "banking/B1_transactions/part_00012.parquet",
+     "rows": 1000000,
+     "bytes": 28981177,
+     "sha256": "c6b8dbede299b9e4e93f725df873cb148d48d2a7486406539004f0a8f141a87f"
+    },
+    {
+     "path": "banking/B1_transactions/part_00013.parquet",
+     "rows": 1000000,
+     "bytes": 28964109,
+     "sha256": "a12f61a9e8b4d0868db8342d1ed27cd727a04aeb00658410e0bc18ffbc700d20"
+    },
+    {
+     "path": "banking/B1_transactions/part_00014.parquet",
+     "rows": 1000000,
+     "bytes": 29000838,
+     "sha256": "ddfbd926c9ed87f527565f1af07461d5a704b0acdcafdd31112a244732439484"
+    },
+    {
+     "path": "banking/B1_transactions/part_00015.parquet",
+     "rows": 1000000,
+     "bytes": 28990923,
+     "sha256": "fa6ccadb0297886bb24c1af61ed80b1e6b6ca72572b8742e5a6c2fe0fec49b22"
+    },
+    {
+     "path": "banking/B1_transactions/part_00016.parquet",
+     "rows": 1000000,
+     "bytes": 29011251,
+     "sha256": "4105310976880464c27bd8bced2da2192ca0ae6081568c3aa3724731796cbf52"
+    },
+    {
+     "path": "banking/B1_transactions/part_00017.parquet",
+     "rows": 1000000,
+     "bytes": 29010054,
+     "sha256": "a9d1e25fc8c6a0eb746ba88718f1ef4843a8dfc78a7d7700048578c6b880f156"
+    },
+    {
+     "path": "banking/B1_transactions/part_00018.parquet",
+     "rows": 1000000,
+     "bytes": 28990354,
+     "sha256": "0fd3c753c96a2930c13c03c68535bc413d7c38a8337354ce69804b4f8088625c"
+    },
+    {
+     "path": "banking/B1_transactions/part_00019.parquet",
+     "rows": 1000000,
+     "bytes": 28988011,
+     "sha256": "52b38125e662581c8608c301c90a306b695f6fd9d0289cddb9d8e30143b4966d"
+    }
+   ]
+  },
+  "B2_accounts": {
+   "domain": "banking",
+   "rows": 750000,
+   "parts": [
+    {
+     "path": "banking/B2_accounts/part_00000.parquet",
+     "rows": 750000,
+     "bytes": 16283680,
+     "sha256": "b36298ad5f30cb1d706e994c23f3703d45ca8515f098a2ef75fe4639938a93ce"
+    }
+   ]
+  },
+  "B3_persons": {
+   "domain": "banking",
+   "rows": 500000,
+   "parts": [
+    {
+     "path": "banking/B3_persons/part_00000.parquet",
+     "rows": 500000,
+     "bytes": 6289061,
+     "sha256": "2349dbda2d1133f143ead5c498aa7d1f81287ddb3148e17cedb06628906b536f"
+    }
+   ]
+  },
+  "B4_auth_events": {
+   "domain": "banking",
+   "rows": 10000000,
+   "parts": [
+    {
+     "path": "banking/B4_auth_events/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 18308321,
+     "sha256": "34ceab8fe4a7ac9c7dabab2dc588cf770bd965b80bef48f63fd167d4ac65237d"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 18308757,
+     "sha256": "66d167568ea2a3acb5cc71a01b8a39c68faa48c63d1afb571876f04451e8d1e5"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 18340207,
+     "sha256": "75d167fcfa5951214e4739040b647466bfd54148a7dae4c735fc055d00812bd3"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 18344972,
+     "sha256": "5af5be7a65a4a11a8a30ebebafef0c9bd8ce70d940ce4e6d69190f252691bd6b"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 18313774,
+     "sha256": "efc23f9a128f7957a2101f49aa41ccc51f2eaeb152cd7ee056f782af419aacb8"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 18312767,
+     "sha256": "2855a4cb333a1421442397c5021d2fbdba91f46641f4de281643f7494a9c38db"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00006.parquet",
+     "rows": 1000000,
+     "bytes": 18321597,
+     "sha256": "4585980ab3f45f6e36967a4b40670916d02066d880f78863e06bfcacdee5289e"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00007.parquet",
+     "rows": 1000000,
+     "bytes": 18315980,
+     "sha256": "9837ea7691dfaf7030fcc2217689c1f7439835ee25e7d140468bdbe90552a587"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00008.parquet",
+     "rows": 1000000,
+     "bytes": 18318974,
+     "sha256": "0e85b20d9f801ca0d56f3f2e3a9c4a855cc232f94f665b9ec4ca7fd6d2aa0b8c"
+    },
+    {
+     "path": "banking/B4_auth_events/part_00009.parquet",
+     "rows": 1000000,
+     "bytes": 18302806,
+     "sha256": "8c292f22a353cda69a8beb8c1273f578dbfc3604c20aa891b4e24ab2f0a9cfb8"
+    }
+   ]
+  },
+  "B5_devices": {
+   "domain": "banking",
+   "rows": 800000,
+   "parts": [
+    {
+     "path": "banking/B5_devices/part_00000.parquet",
+     "rows": 800000,
+     "bytes": 12539771,
+     "sha256": "5e30d0184e79a273aceae2f5957fbc4246c64acbc82d617e053a7729ff9c794b"
+    }
+   ]
+  },
+  "B6_beneficiaries": {
+   "domain": "banking",
+   "rows": 1500000,
+   "parts": [
+    {
+     "path": "banking/B6_beneficiaries/part_00000.parquet",
+     "rows": 1500000,
+     "bytes": 24767140,
+     "sha256": "6cbe00ba67d5fd8d734b46b3f894407e07ef1cb1ebaf32235b02f096c95cbeb4"
+    }
+   ]
+  },
+  "B7_gl_journal": {
+   "domain": "banking",
+   "rows": 2000000,
+   "parts": [
+    {
+     "path": "banking/B7_gl_journal/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 17137750,
+     "sha256": "7db2a557d80d455a29fa5c8441221e2ba345b2396cbdb3cd1cac44dbca3b308a"
+    },
+    {
+     "path": "banking/B7_gl_journal/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 17134213,
+     "sha256": "f1ed529d21701fb291034faafc9509a723b9f7b194880202ff0985be14f5e4b9"
+    }
+   ]
+  },
+  "B8_users_access": {
+   "domain": "banking",
+   "rows": 20000,
+   "parts": [
+    {
+     "path": "banking/B8_users_access/part_00000.parquet",
+     "rows": 20000,
+     "bytes": 413948,
+     "sha256": "e4a93ce253e4147e0a322bc2cfa48852d5d4147b22cd0f822563eff8b30eea9c"
+    }
+   ]
+  },
+  "B9_cards_and_authorisations": {
+   "domain": "banking",
+   "rows": 6000000,
+   "parts": [
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 19100188,
+     "sha256": "c5303be04611a039477f4957bbda07f5b9ca815107d4f2ee4d075177920275a4"
+    },
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 19105154,
+     "sha256": "c9259fbf5016ab1577849c8e12bded152179d64f38e6f976bb21ddca6a332f36"
+    },
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 19107917,
+     "sha256": "5731400fbd829904209ca617ab302fc2d435d5ed01f653f8aee2b62afb95d857"
+    },
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 19107331,
+     "sha256": "14bbe6ddf4e5e8a8a9d23f0dc43cc42c05c1d2e854a71b3569e864b7989bddc3"
+    },
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 19107528,
+     "sha256": "e3514bf18687fd9ca39bd14576b905a3c68db2f75a6a27d694c45798956aff41"
+    },
+    {
+     "path": "banking/B9_cards_and_authorisations/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 19102460,
+     "sha256": "ac6becc2b00a5106b40b25dfbc3cf90aaf427f1fc0d4f3e91eabb1b9edd3419c"
+    }
+   ]
+  },
+  "T10_complaints_and_cases": {
+   "domain": "telecom",
+   "rows": 15000,
+   "parts": [
+    {
+     "path": "telecom/T10_complaints_and_cases/part_00000.parquet",
+     "rows": 15000,
+     "bytes": 232116,
+     "sha256": "150bc6d00c8e897179cbe0a453cfae8aef81ee0fd799b795f7d87f1cb280ed75"
+    }
+   ]
+  },
+  "T11_alerts_and_rules": {
+   "domain": "telecom",
+   "rows": 100000,
+   "parts": [
+    {
+     "path": "telecom/T11_alerts_and_rules/part_00000.parquet",
+     "rows": 100000,
+     "bytes": 1810518,
+     "sha256": "5bafae775df4cc4a453b79c7ab92d31217da687d2b1b342b1ba3d60894139495"
+    }
+   ]
+  },
+  "T12_reference_parameters": {
+   "domain": "telecom",
+   "rows": 1000,
+   "parts": [
+    {
+     "path": "telecom/T12_reference_parameters/part_00000.parquet",
+     "rows": 1000,
+     "bytes": 14796,
+     "sha256": "be9918e50389fdfe1e8d716844c65a68141d4f2713c2dbd7e8283647870d3315"
+    }
+   ]
+  },
+  "T1_cdrs": {
+   "domain": "telecom",
+   "rows": 20000000,
+   "parts": [
+    {
+     "path": "telecom/T1_cdrs/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 27195392,
+     "sha256": "1d4b095233c7c9b687fdc95e2e7220afc1be3013151c15cef2b8705274bd9aeb"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 27169483,
+     "sha256": "2f27aa8b3d9821721249e4a3e95f82a9196aca5b264213a3051075986ef8520e"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 27172196,
+     "sha256": "65009e5a6b93d8c6dd98c507fa35871cb1e8ea9b1a2fe3ea6a92c9038b1443bf"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 27155677,
+     "sha256": "dffb65f50638d306defd4c3ebe11dfa8af88238bbe58f45243361e883d48eacd"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 27181944,
+     "sha256": "a750ad0eb909df7c0c267dd39e72a16bb4efb243cbd233d25fb6b179828355e6"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 27163934,
+     "sha256": "61e7d27cb53bfe52d0e47f3fd27ff001172d2a7ae1affbb3b550c1da5d60af97"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00006.parquet",
+     "rows": 1000000,
+     "bytes": 27204156,
+     "sha256": "aa4172a5513708e6ee781db4bbeb4616f26abed1cd885b43a6763edba7d26c8a"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00007.parquet",
+     "rows": 1000000,
+     "bytes": 27190138,
+     "sha256": "e3def447113683c13e89b291493a4e74464e69722c4c30f8265d467500f33a5b"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00008.parquet",
+     "rows": 1000000,
+     "bytes": 27199117,
+     "sha256": "1032d7359bb5b7385d988046e4bdf80ba2e42173c5c4050e44a1f9f0c1b36a7a"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00009.parquet",
+     "rows": 1000000,
+     "bytes": 27183874,
+     "sha256": "1430bbb7086f5e55b92a8feb4997eeb0a0c6b4b48d5f101471a276d194e3911a"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00010.parquet",
+     "rows": 1000000,
+     "bytes": 27164273,
+     "sha256": "21b4b6cef89d1ae718994f57e77fd7ed1cf2cc091db30a944366639b4464aa19"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00011.parquet",
+     "rows": 1000000,
+     "bytes": 27176362,
+     "sha256": "838e64db07d9c1efa99ae0958bd18d451a62a281bbd1d9ad50cc85946611cc85"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00012.parquet",
+     "rows": 1000000,
+     "bytes": 27207686,
+     "sha256": "1156d69cc23daa426845b45b4a1c65ee40ec6ce7d2466ed18d6c9c5f83b94bbe"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00013.parquet",
+     "rows": 1000000,
+     "bytes": 27165264,
+     "sha256": "d6e815ad373d985629dd8b32bf39a3d056cc2bb6c7d44580bde7a9f39deb2937"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00014.parquet",
+     "rows": 1000000,
+     "bytes": 27178964,
+     "sha256": "b27901e82e121351a17e0a0ab713101d6d898605d460773e223ff8fc0f11ff53"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00015.parquet",
+     "rows": 1000000,
+     "bytes": 27181681,
+     "sha256": "a4edff6a430cedd79190aa8c2ec971eb1f5e4cdddc03a6ae32e0377ae7f8dcd1"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00016.parquet",
+     "rows": 1000000,
+     "bytes": 27192908,
+     "sha256": "8728d490e83f7fb0f2e338bcdf3e61f75cac233e9cb43a3cd738c8698cf04f33"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00017.parquet",
+     "rows": 1000000,
+     "bytes": 27164919,
+     "sha256": "29591f16c355b806fc622aca61fa0431b5931ddda0c3bc688b2206385a19db7c"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00018.parquet",
+     "rows": 1000000,
+     "bytes": 27192642,
+     "sha256": "57cee35610890d25ce2e0cf7cb4ad51adead9b6f4b15b5dfd9daa774fc6e4d22"
+    },
+    {
+     "path": "telecom/T1_cdrs/part_00019.parquet",
+     "rows": 1000000,
+     "bytes": 27200994,
+     "sha256": "09462ae4b2e61cda87e9410c1968e181a42b1f95679f40da8a7b2d59dce48b64"
+    }
+   ]
+  },
+  "T2_subscribers": {
+   "domain": "telecom",
+   "rows": 1000000,
+   "parts": [
+    {
+     "path": "telecom/T2_subscribers/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 12569765,
+     "sha256": "a5c86bf6f8443504e784ae2e3986b15b0c45e3b0fa662abd581dd17ef7ea0c1a"
+    }
+   ]
+  },
+  "T3_sims_and_sim_swap_events": {
+   "domain": "telecom",
+   "rows": 1100000,
+   "parts": [
+    {
+     "path": "telecom/T3_sims_and_sim_swap_events/part_00000.parquet",
+     "rows": 1100000,
+     "bytes": 29462706,
+     "sha256": "232e23e65b74e2c918e31a129d83970b7213bd4f3222e2584156d9526718cc6a"
+    }
+   ]
+  },
+  "T4_momo_wallet_txns": {
+   "domain": "telecom",
+   "rows": 20000000,
+   "parts": [
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 24707720,
+     "sha256": "d27ab83caf7c1b1ef32c22785d13356207eda92ca08f46b12a0efbfbfe98dd2c"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 24701464,
+     "sha256": "d89c1fa3c36497e1a49fc1bbe3c9f4150b40979855bcf04ca41a4d188801fc75"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 24695662,
+     "sha256": "0cf1814d486ce31b1f7b3721ab24ff4207d9331889691dff3b6f5c8a92daf530"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 24705573,
+     "sha256": "512b6b0dfe3793d56c94a705cbfa54da2032f55d89db2159e5782cbaa436a9dd"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 24713819,
+     "sha256": "7bb2fb57152018ed487ce93b454fd0f53774766e4c357487814a870a0f7937ba"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 24702912,
+     "sha256": "8e5a1c8d073613ff6d9396101983f5ad0f683151da70322bb4f659425af8f6a2"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00006.parquet",
+     "rows": 1000000,
+     "bytes": 24711988,
+     "sha256": "935459f56ed170701d274c1e37b4b8d0544859bcbb2f2c5aa6c93416609b0d78"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00007.parquet",
+     "rows": 1000000,
+     "bytes": 24723190,
+     "sha256": "db1d1d5025c5dddb6eb769d04bf77f467f9f1b7df5cf283c9bd86e38e4a02e0e"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00008.parquet",
+     "rows": 1000000,
+     "bytes": 24714797,
+     "sha256": "350183cc964d2156ac52395acdab78d2f47a3a8abaca7698de927682dcc56a92"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00009.parquet",
+     "rows": 1000000,
+     "bytes": 24713179,
+     "sha256": "15450e0fff5d0539bc32aef947bd6f24cfee0eadd4da72374da73a22b1585e89"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00010.parquet",
+     "rows": 1000000,
+     "bytes": 24706760,
+     "sha256": "08788c70306f0450f5680f6de60ee10dcfad6976811ccbf9d54736459f086223"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00011.parquet",
+     "rows": 1000000,
+     "bytes": 24710656,
+     "sha256": "ff1b5f01220e0c874172c957221044d0f27dba45eb105d07ca309a969d8f8c8e"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00012.parquet",
+     "rows": 1000000,
+     "bytes": 24714374,
+     "sha256": "3993294b1951179c90d3ce94961802176a8622e6b697835138fae79326813e86"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00013.parquet",
+     "rows": 1000000,
+     "bytes": 24702126,
+     "sha256": "7865d378fd93564e59f22f47f73b28799d29c02b7145c6d1cba41749ce33825a"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00014.parquet",
+     "rows": 1000000,
+     "bytes": 24706730,
+     "sha256": "3663399b810397b5f6dd3870db306385d76496bda579d013695401d409f13774"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00015.parquet",
+     "rows": 1000000,
+     "bytes": 24703096,
+     "sha256": "48eca3fe0a097072c832b509eaa7a71b9ccf3b67b0b7ceb6166eed11e153094f"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00016.parquet",
+     "rows": 1000000,
+     "bytes": 24705282,
+     "sha256": "5800d0959408cbb2cef09e60d53a6c194afe4de081a259cdbb8d2bb7c8f43e82"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00017.parquet",
+     "rows": 1000000,
+     "bytes": 24696328,
+     "sha256": "690b7b69fb54a925a3f333e20d6df56f2f3131680952239e2cdb9c73229fc796"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00018.parquet",
+     "rows": 1000000,
+     "bytes": 24683795,
+     "sha256": "b37c534c791f05c2d340390e9735fd7ed7c76b694f0aca8b80d68721e8af49de"
+    },
+    {
+     "path": "telecom/T4_momo_wallet_txns/part_00019.parquet",
+     "rows": 1000000,
+     "bytes": 24696396,
+     "sha256": "e5837ce25bd85d4910feaa8efdd6ee18c279f8799606ebe9d912bdc225aa99da"
+    }
+   ]
+  },
+  "T5_wallets": {
+   "domain": "telecom",
+   "rows": 800000,
+   "parts": [
+    {
+     "path": "telecom/T5_wallets/part_00000.parquet",
+     "rows": 800000,
+     "bytes": 7961496,
+     "sha256": "e145cc1750f6fb0ba99c9041fc2f287d2c5bc1ef2f645a76a6fb694372d809ea"
+    }
+   ]
+  },
+  "T6_agents": {
+   "domain": "telecom",
+   "rows": 2000000,
+   "parts": [
+    {
+     "path": "telecom/T6_agents/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 15807624,
+     "sha256": "556c2d7787aeb81591381651add44e0b76415bcf3944e09b7974ea1c494ec6f1"
+    },
+    {
+     "path": "telecom/T6_agents/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 15796372,
+     "sha256": "d92ca5775a696388145ae0f235a8de5a19d4391f8cffd15ee84781fc749bbb59"
+    }
+   ]
+  },
+  "T7_topups_billing": {
+   "domain": "telecom",
+   "rows": 12000000,
+   "parts": [
+    {
+     "path": "telecom/T7_topups_billing/part_00000.parquet",
+     "rows": 1000000,
+     "bytes": 10171712,
+     "sha256": "4904254094a901a7332d5f149361750413877cb88ec99bcaa6b842fab554a082"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00001.parquet",
+     "rows": 1000000,
+     "bytes": 10161489,
+     "sha256": "f25844ccbbcad7be86e92e3882c52cf9098b2411c5ec53c17c23999cc7e36e1d"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00002.parquet",
+     "rows": 1000000,
+     "bytes": 10171801,
+     "sha256": "277f300017465a666ac5c4451ada27ce330c1bbf817c603eebff26703c3915d2"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00003.parquet",
+     "rows": 1000000,
+     "bytes": 10160555,
+     "sha256": "45442a692d0a0c6f9142ad04c99978a3d8e30d1336015671cb4cb576d127aab9"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00004.parquet",
+     "rows": 1000000,
+     "bytes": 10173740,
+     "sha256": "dd642eda3b88f88257c6bd724268c2863b4e8ef0c46d7281ddf244c1db59883f"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00005.parquet",
+     "rows": 1000000,
+     "bytes": 10165225,
+     "sha256": "cb676b7c9b0c0d092d248a7d02ce2bc34c9f5b8cc96593ed92bb536b230894c1"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00006.parquet",
+     "rows": 1000000,
+     "bytes": 10163374,
+     "sha256": "194f3a166ab9932ad5b632af8ae35e209ba1a9f2dbe74bca431e84621a512065"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00007.parquet",
+     "rows": 1000000,
+     "bytes": 10176687,
+     "sha256": "7e814ee18ed867fa9f18e0eb892d6bf99ee1460b2757074509fd148b862433a7"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00008.parquet",
+     "rows": 1000000,
+     "bytes": 10175047,
+     "sha256": "4c79c9cb21f0ab7dc9fed5d8dd496cbac64df2369622ff6f89374a18b55b06af"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00009.parquet",
+     "rows": 1000000,
+     "bytes": 10162306,
+     "sha256": "15143defd0b37d3444eb8f6c24cad9c5453e09285c148cf06e3757e76ff9e081"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00010.parquet",
+     "rows": 1000000,
+     "bytes": 10169973,
+     "sha256": "cbf21bba08e5abe61ce05fe0db96456f67f70180a2b53b95f472ec164d3f5fab"
+    },
+    {
+     "path": "telecom/T7_topups_billing/part_00011.parquet",
+     "rows": 1000000,
+     "bytes": 10173898,
+     "sha256": "8129a6c257ec85471f8b7d1efc36f5ede3a2813117ee330ab045ddb5f3d19819"
+    }
+   ]
+  },
+  "T8_interconnect_traffic": {
+   "domain": "telecom",
+   "rows": 50000,
+   "parts": [
+    {
+     "path": "telecom/T8_interconnect_traffic/part_00000.parquet",
+     "rows": 50000,
+     "bytes": 509885,
+     "sha256": "ae9b04ccb539026aa22c3b2e2908e8d456dcc77a6ce8000cbf7daf3b12f4fb7d"
+    }
+   ]
+  },
+  "T9_cell_sites_and_roaming": {
+   "domain": "telecom",
+   "rows": 200000,
+   "parts": [
+    {
+     "path": "telecom/T9_cell_sites_and_roaming/part_00000.parquet",
+     "rows": 200000,
+     "bytes": 2680326,
+     "sha256": "b0dd800f65b0f67c9d023dd6ba80e62e20abbabf876c27b5a75a614473c71365"
+    }
+   ]
+  }
+ }
+}
