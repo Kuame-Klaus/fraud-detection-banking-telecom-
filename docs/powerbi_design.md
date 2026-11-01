@@ -240,3 +240,23 @@ On the Power BI Service, the data source is set to Anonymous with privacy level 
 2. Cell latitude and longitude are an open question in docs/open_questions.md, so page 12 may only show the route table at first.
 3. The full results file path and whether it needs splitting into parts.
 4. The network visual is a custom visual and needs approval to use.
+
+
+## Page mockups
+
+These are static PNG mockups drawn with matplotlib by `docs/powerbi_mockups/render_mockups.py`. They use the real sample results in `outputs/sample/results_latest.csv` (run python_sample, data commit 0e51256). They are not a Power BI build and have not been tested in Power BI. Only the Python stack has run, so Alteryx and KNIME show as no run yet. The cell map on page 12 is a labelled placeholder because the results file has no latitude or longitude yet.
+
+| Page | Mockup |
+|---|---|
+| 1. KPI overview | <a href="powerbi_mockups/page_01_kpi_overview.png"><img src="powerbi_mockups/page_01_kpi_overview.png" width="320" alt="KPI overview mockup"></a> |
+| 2. Detection heat map | <a href="powerbi_mockups/page_02_detection_heatmap.png"><img src="powerbi_mockups/page_02_detection_heatmap.png" width="320" alt="Detection heat map mockup"></a> |
+| 3. Precision and recall curves and confusion matrices | <a href="powerbi_mockups/page_03_pr_curves_confusion.png"><img src="powerbi_mockups/page_03_pr_curves_confusion.png" width="320" alt="Precision and recall curves and confusion matrices mockup"></a> |
+| 4. Alert trends | <a href="powerbi_mockups/page_04_alert_trends.png"><img src="powerbi_mockups/page_04_alert_trends.png" width="320" alt="Alert trends mockup"></a> |
+| 5. Risk leaderboards | <a href="powerbi_mockups/page_05_risk_leaderboards.png"><img src="powerbi_mockups/page_05_risk_leaderboards.png" width="320" alt="Risk leaderboards mockup"></a> |
+| 6. Mule and agent network graphs | <a href="powerbi_mockups/page_06_network_graphs.png"><img src="powerbi_mockups/page_06_network_graphs.png" width="320" alt="Mule and agent network graphs mockup"></a> |
+| 7. Hour by weekday heat maps | <a href="powerbi_mockups/page_07_hour_weekday_heatmap.png"><img src="powerbi_mockups/page_07_hour_weekday_heatmap.png" width="320" alt="Hour by weekday heat maps mockup"></a> |
+| 8. Benford chart | <a href="powerbi_mockups/page_08_benford.png"><img src="powerbi_mockups/page_08_benford.png" width="320" alt="Benford chart mockup"></a> |
+| 9. Threshold slider | <a href="powerbi_mockups/page_09_threshold_slider.png"><img src="powerbi_mockups/page_09_threshold_slider.png" width="320" alt="Threshold slider mockup"></a> |
+| 10. Data quality and reconciliation | <a href="powerbi_mockups/page_10_dq_reconciliation.png"><img src="powerbi_mockups/page_10_dq_reconciliation.png" width="320" alt="Data quality and reconciliation mockup"></a> |
+| 11. Tool runtime and memory | <a href="powerbi_mockups/page_11_runtime_memory.png"><img src="powerbi_mockups/page_11_runtime_memory.png" width="320" alt="Tool runtime and memory mockup"></a> |
+| 12. Telecom route and cell maps | <a href="powerbi_mockups/page_12_route_cell_maps.png"><img src="powerbi_mockups/page_12_route_cell_maps.png" width="320" alt="Telecom route and cell maps mockup"></a> |
