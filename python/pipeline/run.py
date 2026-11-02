@@ -90,8 +90,8 @@ def main(argv=None):
     ap.add_argument("--max-train-rows", type=int, default=2_000_000, help="stratified sample cap for XGBoost training")
     ap.add_argument("--csv-scores", choices=["auto", "yes", "no"], default="auto",
                     help="write score rows to the CSV too (auto: only when the run is small)")
-    ap.add_argument("--rules", choices=["default", "proposed"], default="default",
-                    help="proposed swaps in the candidate R_B06, R_B09, R_B16 and R_T01 from docs/threshold_proposals.md")
+    ap.add_argument("--rules", choices=["default", "v1"], default="default",
+                    help="v1 runs the old R_B06, R_B09, R_B16 and R_T01 (config/rule_versions.yaml) for comparison")
     a = ap.parse_args(argv)
     run_id = a.run_id or "python_" + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = Path(a.out); tmp = out / f"_tmp_{run_id}"
@@ -167,12 +167,12 @@ def main(argv=None):
                 feats = features.BANK_FEATURES
             elif tb == "T4":
                 tf = time.time(); d = features.telecom_features(d, small["T5_wallets"], last_swap, agent_day_s,
-                                                swaps=small["T3_sims_and_sim_swap_events"] if a.rules == "proposed" else None); t_feat += time.time() - tf
+                                                swaps=small["T3_sims_and_sim_swap_events"]); t_feat += time.time() - tf
                 feats = features.TEL_FEATURES
             d.attrs["leaky_routes"] = leaky; d.attrs["privileged_users"] = priv
             lab = d["synthetic_scenario"].to_numpy()
             for scen, rid, _, ent, etype, tcol, acol, f in by_table.get(tb, []):
-                if a.rules == "proposed": f = rules.PROPOSED.get(rid, f)
+                f = rules.pick(rid, f, a.rules)
                 flag = f(d).reindex(d.index).fillna(False).astype(bool).to_numpy()
                 s = stats.setdefault((rid, scen, tb, domain), [0, 0, 0])
                 s[0] += int((flag & (lab == scen)).sum()); s[1] += int((lab == scen).sum()); s[2] += int(flag.sum())
@@ -209,7 +209,7 @@ def main(argv=None):
     W.add({"record_type": "metric", "domain": "telecom", "model": "rule", "rule_id": "R_T08", "scenario": "interconnect_leakage",
            "split": "all", "dataset_id": "T8", "metric": "route_days_without_settlement_row", "value": float(g.attrs["no_settlement_row"])})
     for (rid, scen, tb, domain), (tp, planted, alerts) in stats.items():
-        base = {"record_type": "metric", "domain": domain, "model": "rule", "rule_id": rid, "scenario": scen, "split": "all", "dataset_id": tb}
+        base = {"record_type": "metric", "domain": domain, "model": "rule", "rule_id": rid, "scenario": scen, "split": "all", "dataset_id": tb, "note": f"rules version {a.rules}"}
         for m, v in [("planted_rows", planted), ("alerts", alerts), ("detected", tp), ("recall", tp / planted if planted else np.nan),
                      ("precision", tp / alerts if alerts else np.nan)]:
             W.add({**base, "metric": m, "value": float(v)})

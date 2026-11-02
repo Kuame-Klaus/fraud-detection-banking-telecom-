@@ -1,0 +1,26 @@
+# Rule versions for the four rules changed in round 6 (approved by Klaus Konsults).
+# Select with: python -m python.pipeline.run --rules default   (new, the default)
+#              python -m python.pipeline.run --rules v1        (old values and logic, for comparison)
+# All values are ASSUMPTION defaults tuned on SYNTHETIC data. Retune them on real client data before use.
+v1:
+  R_B06: {logic: "country differs from the account's previous transaction and gap under max_gap_seconds; flags the second row only", max_gap_seconds: 3600}
+  R_B09: {logic: "password reset within 2 rows, failed logins for the person over the whole period >= min_failed, geo not GH", reset_window_rows: 5, min_failed: 2}
+  R_B16: {logic: "row flag: first digit 7 or 8 and amount in [700, 9000)", digits: [7, 8], min_amount: 700, max_amount: 9000}
+  R_T01: {logic: "cash out within max_hours after the latest swap of the number over the whole period", max_hours: 24}
+default:
+  R_B06:
+    logic: "both rows card and approved, gap <= max_gap_seconds, one country GH and the other in far_countries; flags both rows"
+    max_gap_seconds: 1800
+    far_countries: [GB, US]
+  R_B09:
+    logic: "password reset abroad straight after 2 failed logins from the same device and IP within window_seconds; flags those 3 events and the next 2 within the window"
+    window_seconds: 900
+  R_B16:
+    logic: "Benford population test per account and calendar month; flags the rows with over represented first digits in account months that fail"
+    min_rows: 8
+    min_mad: 0.12
+    max_p_value: 0.000001
+    over_share: 0.10
+  R_T01:
+    logic: "cash out within max_hours after the latest swap at or before the transaction"
+    max_hours: 24

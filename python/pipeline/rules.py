@@ -224,9 +224,15 @@ def leaky_routes_from(t1_minutes_by_route: pd.Series, t8: pd.DataFrame) -> list[
 
 
 # ---------------------------------------------------------------------------
-# PROPOSED versions (docs/threshold_proposals.md). Not the default: used only with run.py --rules proposed,
-# until Klaus Konsults approves them.
-FAR = {"GB", "US"}  # ASSUMPTION: countries not reachable from GH within 30 minutes
+# Default versions of R_B06, R_B09, R_B16 and R_T01 (approved by Klaus Konsults, docs/threshold_proposals.md).
+# The functions registered above with @rule are version v1, kept for comparison (run.py --rules v1).
+# Parameters come from config/rule_versions.yaml. Tuned on SYNTHETIC data: retune on real client data.
+import yaml
+from pathlib import Path
+from scipy.stats import chi2 as _chi2
+CFG = yaml.safe_load((Path(__file__).resolve().parents[2] / "config/rule_versions.yaml").read_text())
+P = CFG["default"]
+FAR = set(P["R_B06"]["far_countries"])
 
 
 def travel_proposed(d):
@@ -234,7 +240,7 @@ def travel_proposed(d):
     g = d2.groupby("account_id", sort=False)
     prev_c = g["country"].shift(); prev_ch = g["channel"].shift(); prev_rc = g["response_code"].shift()
     gap = g["timestamp"].diff().dt.total_seconds()
-    pair = ((d2["country"] != prev_c) & (gap <= 1800) & (d2["channel"] == "card") & (prev_ch == "card")
+    pair = ((d2["country"] != prev_c) & (gap <= P["R_B06"]["max_gap_seconds"]) & (d2["channel"] == "card") & (prev_ch == "card")
             & (d2["response_code"] == "00") & (prev_rc == "00")
             & (d2["country"].isin(FAR) | prev_c.isin(FAR)) & (d2["country"].eq("GH") | prev_c.eq("GH")))
     flag = pair | pair.groupby(d2["account_id"], sort=False).shift(-1, fill_value=False)  # also the first row of the pair
@@ -249,12 +255,12 @@ def ato_auth_proposed(d):
     ok = d2["event_type"].eq("password_reset") & d2["geo"].ne("GH")
     for k in (1, 2):
         ok &= (g["event_type"].shift(k).eq("login_failed") & g["device_id"].shift(k).eq(d2["device_id"])
-               & g["ip"].shift(k).eq(d2["ip"]) & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= 900))
+               & g["ip"].shift(k).eq(d2["ip"]) & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= P["R_B09"]["window_seconds"]))
     flag = ok.copy()
     for k in (1, 2):
         flag |= ok.groupby(d2["person_id"], sort=False).shift(-k, fill_value=False)  # the 2 failed logins
         back = ok.groupby(d2["person_id"], sort=False).shift(k, fill_value=False)
-        flag |= back & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= 900)  # the 2 events after the reset
+        flag |= back & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= P["R_B09"]["window_seconds"])  # the 2 events after the reset
     return flag.reindex(d.index)
 
 
@@ -269,8 +275,39 @@ def benford_proposed(d):
 
 def simswap_proposed(d):
     """Cash out within 24 hours after the latest swap at or before the transaction (not the latest swap overall)."""
-    return (d["hours_since_prior_swap"] < 24) & (d["type"] == "cash_out")
+    return (d["hours_since_prior_swap"] < P["R_T01"]["max_hours"]) & (d["type"] == "cash_out")
 
 
-PROPOSED = {"R_B06": travel_proposed, "R_B09": ato_auth_proposed, "R_T01": simswap_proposed}
-# benford_proposed was measured and rejected (sample recall 0.1); see docs/threshold_proposals.md
+BENFORD_P = np.log10(1 + 1 / np.arange(1, 10))
+
+
+def benford_account_month(d):
+    """Benford population test per account and calendar month. For each account month with at least min_rows
+    transactions, compare the first digit counts with Benford: MAD (mean absolute share difference over digits 1 to 9)
+    and a chi square test with 8 degrees of freedom. The account month fails when MAD >= min_mad and p <= max_p_value.
+    Rows flagged: those in failing account months whose first digit share is more than over_share above Benford."""
+    c = P["R_B16"]; a = d["amount"].to_numpy(dtype=float)
+    ld = np.zeros(len(a), dtype=int); ok = a >= 1
+    ld[ok] = (a[ok] / 10 ** np.floor(np.log10(a[ok]))).astype(int)
+    key = d["account_id"].astype(str) + "|" + d["timestamp"].dt.strftime("%Y-%m")
+    ct = pd.crosstab(key, ld).reindex(columns=range(1, 10), fill_value=0)
+    n = ct.sum(axis=1); exp = np.outer(n, BENFORD_P)
+    share = ct.div(n.where(n > 0, 1), axis=0)
+    mad = (share - BENFORD_P).abs().mean(axis=1)
+    p = _chi2.sf((((ct - exp) ** 2) / np.where(exp > 0, exp, 1)).sum(axis=1), 8)
+    fail = (n >= c["min_rows"]) & (mad >= c["min_mad"]) & (p <= c["max_p_value"])
+    over = (share - BENFORD_P) > c["over_share"]  # account month by digit
+    fk = set(fail[fail].index)
+    if not fk:
+        return pd.Series(False, index=d.index)
+    o = over.loc[list(fk)].stack(); o = set(o[o].index)
+    return pd.Series([(k, x) in o if k in fk else False for k, x in zip(key, ld)], index=d.index)
+
+
+NEW = {"R_B06": travel_proposed, "R_B09": ato_auth_proposed, "R_B16": benford_account_month, "R_T01": simswap_proposed}
+# benford_proposed (first two digits) was measured and rejected (sample recall 0.1); kept for the record only.
+
+
+def pick(rid, v1_func, version="default"):
+    """Function for a rule in the selected version."""
+    return NEW.get(rid, v1_func) if version == "default" else v1_func
