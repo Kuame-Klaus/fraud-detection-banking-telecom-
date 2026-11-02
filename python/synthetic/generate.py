@@ -126,6 +126,7 @@ def gen_banking(cfg, scale, out, rng, chunk):
 
     # B1 transactions in chunks
     w = Writer(out, "banking", "B1_transactions")
+    bprng = np.random.default_rng(cfg["seed"] + 300)  # Benford cluster placement (version 2), separate stream
     total, off = R["B1_transactions"], 0
     while off < total:
         n = min(chunk, total - off)
@@ -191,6 +192,11 @@ def gen_banking(cfg, scale, out, rng, chunk):
             sl = slice(s, s + 10)
             A[sl] = np.round(rng.choice([7, 8], 10) * 10 ** rng.integers(2, 4, 10) * rng.uniform(1.0, 1.12, 10), 2)
             lab[sl] = "benford_anomaly"
+            # Version 2: each block is one account in one calendar month, so a per account month Benford test can see it.
+            # Version 1 left the 10 rows on 10 random accounts at random times, which no test can separate from noise.
+            ACC[sl] = bprng.integers(0, n_acc)
+            m0 = T[s].astype("datetime64[M]").astype("datetime64[s]")
+            T[sl] = m0 + np.sort(bprng.integers(0, 27 * 86400, 10)).astype("timedelta64[s]")
         # reversal_abuse: repeated reversals by one account
         for s in plant_blocks(rng, n, PLANT_SHARE, 4):
             ACC[s:s + 4] = rng.integers(0, n_acc); REV[s:s + 4] = 1

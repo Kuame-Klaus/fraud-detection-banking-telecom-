@@ -71,122 +71,122 @@
     {
      "path": "banking/B1_transactions/part_00000.parquet",
      "rows": 1000000,
-     "bytes": 28952076,
-     "sha256": "e89ea180c41d727370f0808a7effc015cf7c001b4fb00088af70e43ad9d8187d"
+     "bytes": 28948361,
+     "sha256": "c96b940f711d263cca7011b7614f385d896795cc1f14c682ccdd2ceabbe48dd9"
     },
     {
      "path": "banking/B1_transactions/part_00001.parquet",
      "rows": 1000000,
-     "bytes": 28983247,
-     "sha256": "6a1b90a632a2178e8d4a4c54146a26846ca1a0a94854cb6e0dd48ef0fb92c434"
+     "bytes": 28981270,
+     "sha256": "ed865f95c53de10e7e29e283008b3586bca1869f4551c8e69a5ac5175c0ed5bb"
     },
     {
      "path": "banking/B1_transactions/part_00002.parquet",
      "rows": 1000000,
-     "bytes": 28980691,
-     "sha256": "673f375e417e679ba4f5914daef4ca5a6b37c004a88d6a06540f3cee05ce1b3d"
+     "bytes": 28979336,
+     "sha256": "d98776ede7156bca3fdf7df5ea5713f50229acbd977c0c0f213fe8b739ae125e"
     },
     {
      "path": "banking/B1_transactions/part_00003.parquet",
      "rows": 1000000,
-     "bytes": 28966336,
-     "sha256": "6c8ea3f44efea7ee7febfadbcf97b1ac832d770cdb910722c5f77a2bfcfe24af"
+     "bytes": 28965078,
+     "sha256": "acc64f8ec652ecc9b6683d3bdfd2d108c0c8a10b24cb29c3f396df6f74dd7159"
     },
     {
      "path": "banking/B1_transactions/part_00004.parquet",
      "rows": 1000000,
-     "bytes": 29018747,
-     "sha256": "f8771d1171460059150f2d01697ffc69570035a0a71df816298d946730f480a0"
+     "bytes": 29017492,
+     "sha256": "4d4f6c425d1a9c0d7f0f496cbcb46ede58b32b58709826032ad295113cdda2ef"
     },
     {
      "path": "banking/B1_transactions/part_00005.parquet",
      "rows": 1000000,
-     "bytes": 28950255,
-     "sha256": "2135bf6f839b870a3537878007589b8c207451e4be2e78f678b5be46d8c9767d"
+     "bytes": 28949809,
+     "sha256": "0c57bf7aae63542c07e3736b63c43cfb65a9aa0376a04c66fa2f5cc6ed3cfa27"
     },
     {
      "path": "banking/B1_transactions/part_00006.parquet",
      "rows": 1000000,
-     "bytes": 28983244,
-     "sha256": "3022f3b499293fb07897c5c8ea727ec6a18777c68a26e9a8718f8f90b8d9407a"
+     "bytes": 28981926,
+     "sha256": "85e0db5853fd889a59e97c87bdb3f31a3c812cf1d792c95c9f3ed74f6f896958"
     },
     {
      "path": "banking/B1_transactions/part_00007.parquet",
      "rows": 1000000,
-     "bytes": 28997367,
-     "sha256": "6309b977d4addf69ccc1d6efe7cad6a883393e5b175b6f6fd2630c4f19bd809f"
+     "bytes": 28996876,
+     "sha256": "e6415d1da27e5044b9e6579eb7b4a83c6d1cff5722e0d9298765b9ca91419f4b"
     },
     {
      "path": "banking/B1_transactions/part_00008.parquet",
      "rows": 1000000,
-     "bytes": 28948651,
-     "sha256": "c5d0c0cd6379c1bffc2966b10f3be2d3c4d8168b0230aa25d3a796d187e1fcc2"
+     "bytes": 28946672,
+     "sha256": "8006d9b74aca316c064c1dd551fa5318a4ec15eeba4e0873bb2bdf6a22b7d7e0"
     },
     {
      "path": "banking/B1_transactions/part_00009.parquet",
      "rows": 1000000,
-     "bytes": 28977645,
-     "sha256": "b497d2844d6593db77fca013b5e72b1628fc0a91f29c2f58f0ee4354de230f14"
+     "bytes": 28978189,
+     "sha256": "a3cff8799cd508aa42d775b92280f5442e19dbe0bf80b6ff67590fc8964f5a6f"
     },
     {
      "path": "banking/B1_transactions/part_00010.parquet",
      "rows": 1000000,
-     "bytes": 28970349,
-     "sha256": "0a41e921682fb9268114a5028bd78a306170152334659b225848a1c161f85de7"
+     "bytes": 28969121,
+     "sha256": "28a39465021363f5a614d5fc973c1b5195563562292d0da76a079dba295a133f"
     },
     {
      "path": "banking/B1_transactions/part_00011.parquet",
      "rows": 1000000,
-     "bytes": 28960207,
-     "sha256": "0f4b32825e68038e79e423666df610fac7228bcb8fb8866999af96f3c197cc81"
+     "bytes": 28959728,
+     "sha256": "78a96480b1145564101c261c6a6465aa2a91207c02fd0ed16f0cc9955991785c"
     },
     {
      "path": "banking/B1_transactions/part_00012.parquet",
      "rows": 1000000,
-     "bytes": 28981177,
-     "sha256": "c6b8dbede299b9e4e93f725df873cb148d48d2a7486406539004f0a8f141a87f"
+     "bytes": 28979922,
+     "sha256": "a0aaa1809463128de26d4ba58b5da71885c5f3c58c6956b29171903b09b8ce9c"
     },
     {
      "path": "banking/B1_transactions/part_00013.parquet",
      "rows": 1000000,
-     "bytes": 28964109,
-     "sha256": "a12f61a9e8b4d0868db8342d1ed27cd727a04aeb00658410e0bc18ffbc700d20"
+     "bytes": 28963033,
+     "sha256": "fac5c8a6fa74298ed5507eff1df68f7aedbfd932162735cd0fa8dc68290f8412"
     },
     {
      "path": "banking/B1_transactions/part_00014.parquet",
      "rows": 1000000,
-     "bytes": 29000838,
-     "sha256": "ddfbd926c9ed87f527565f1af07461d5a704b0acdcafdd31112a244732439484"
+     "bytes": 28999609,
+     "sha256": "cc1ce401caa6a7753409424da278e21c649353eeeabdd2fd8b1f714712091e7e"
     },
     {
      "path": "banking/B1_transactions/part_00015.parquet",
      "rows": 1000000,
-     "bytes": 28990923,
-     "sha256": "fa6ccadb0297886bb24c1af61ed80b1e6b6ca72572b8742e5a6c2fe0fec49b22"
+     "bytes": 28989791,
+     "sha256": "4ecb34f24a22007d5f35bf8e9077c00124c91dfd61b2c4eac06ba362bf6a9425"
     },
     {
      "path": "banking/B1_transactions/part_00016.parquet",
      "rows": 1000000,
-     "bytes": 29011251,
-     "sha256": "4105310976880464c27bd8bced2da2192ca0ae6081568c3aa3724731796cbf52"
+     "bytes": 29009116,
+     "sha256": "607c1c52ea279245deb50b7fa13c2e772592d3f1ac9752bb6c6adc020f9ca200"
     },
     {
      "path": "banking/B1_transactions/part_00017.parquet",
      "rows": 1000000,
-     "bytes": 29010054,
-     "sha256": "a9d1e25fc8c6a0eb746ba88718f1ef4843a8dfc78a7d7700048578c6b880f156"
+     "bytes": 29008023,
+     "sha256": "b069318c9087a2b44ae949047ddfd9b22bb364a279b98bf5f30d6463f1d032cd"
     },
     {
      "path": "banking/B1_transactions/part_00018.parquet",
      "rows": 1000000,
-     "bytes": 28990354,
-     "sha256": "0fd3c753c96a2930c13c03c68535bc413d7c38a8337354ce69804b4f8088625c"
+     "bytes": 28989161,
+     "sha256": "bc273cd2a276085b1871d783d41c752901b4cbee6c6a60f2cba233ad9251345a"
     },
     {
      "path": "banking/B1_transactions/part_00019.parquet",
      "rows": 1000000,
-     "bytes": 28988011,
-     "sha256": "52b38125e662581c8608c301c90a306b695f6fd9d0289cddb9d8e30143b4966d"
+     "bytes": 28986116,
+     "sha256": "8cf92d249edd1201e9a90543343ea861a2393cae43d597b2c7a33fecd141c2b3"
     }
    ]
   },
