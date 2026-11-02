@@ -684,6 +684,104 @@ Privileged user list for R_B12: all B8 user_id where permission = "admin_gl".
 7. Run rows: runtime_seconds and peak_memory_mb per stage (load, data_quality, features, rules, model, output) and a total row.
 8. Agreement rows are not written by Python yet. When this build exists, compare its predicted labels with Python's on the same record_id.
 
+## Nodes you need
+
+This build needs only the 39 KNIME Analytics Platform nodes below, grouped by pipeline step. Every other node in the repository is not needed for this build.
+
+Where a name or option is uncertain it says so. Check it in your KNIME version rather than trusting this list blindly.
+
+### Input of the Parquet parts (steps 1 and 2)
+
+1. **CSV Reader**: reads config/sources.csv and the sample CSVs from their raw URLs.
+2. **Parquet Reader**: reads the Parquet parts (one file per loop pass, or a whole folder).
+3. **JSON Reader**: reads data/full/manifest.json.
+4. **JSON Path**: pulls dataset, path, rows and sha256 for each part out of the manifest.
+5. **Ungroup**: turns the list of parts from JSON Path into one row per part.
+6. **Table Row To Variable Loop Start**: loops over the part rows, one part per pass.
+7. **Loop End**: collects every part into one table.
+8. **Table Creator**: holds the source switch, the scenario list and the five threshold changes.
+
+### Step 1 Load and control totals
+
+9. **String to Date&Time**: parses timestamps (format yyyy-MM-dd'T'HH:mm:ss'Z').
+10. **Column Filter**: keeps only the needed columns.
+11. **GroupBy**: row counts and amount sums per dataset and month (also used in every later step).
+12. **Breakpoint**: stops the run when a part's row count does not match the manifest.
+
+### Step 2 Data quality
+
+13. **Duplicate Row Filter**: finds duplicate keys.
+14. **Missing Value**: optional fills after the null counts are taken.
+15. **Row Filter**: negative amounts and timestamps out of range.
+16. **Rule-based Row Filter**: conditions that need more than one column.
+17. **Unpivot**: turns columns into rows so null cells can be counted per column.
+18. **Extract Date&Time Fields**: month key, hour and weekday.
+
+### Step 3 Features
+
+19. **Sorter**: entity then time, before every window calculation.
+20. **Lag Column**: previous row values (time, country) for secs_since_prev and country_change_fast; for secs_to_next, sort each entity by time descending and lag again (we are not sure every version allows a negative lag).
+21. **Date&Time Difference**: seconds between a row and its lagged row.
+22. **Moving Aggregation**: rolling and cumulative counts inside a group (R_B09 window, R_T10 run, cumulative counts for the precision and recall curve).
+23. **Column Expressions**: many output columns per node, grouped as described below.
+24. **Math Formula (Multi Column)**: one formula over many columns at once (the model transform).
+25. **Joiner**: adds B2 to B1, T5 and T3 to T4, and joins GroupBy results back to rows.
+
+### Step 4 Rules
+
+26. **Rule Engine**: rule conditions written as rules, one output column per node.
+27. **Concatenate**: stacks rule outputs and result record types.
+
+Rules also reuse GroupBy, Joiner, Lag Column and Moving Aggregation from above.
+
+### Step 5 Model
+
+28. **Rule-based Row Splitter**: splits train from validation and test by date.
+29. **Normalizer**: z score standardisation fitted on train.
+30. **Normalizer (Apply)**: applies the train standardisation to validation and test.
+31. **Logistic Regression Learner**: the default model per domain. We are not sure it supports balanced class weights exactly as Python does; if it does not, use Python Script with scikit learn so results match.
+32. **Logistic Regression Predictor**: scores every row.
+33. **XGBoost Tree Ensemble Learner**: the optional XGBoost model (KNIME XGBoost Integration extension).
+34. **XGBoost Predictor**: scores rows with the XGBoost model.
+35. **Auto-Binner**: score bands 0.0 to 0.1 up to 0.9 to 1.0 for drift (Column Expressions also works).
+
+### Step 6 Output to the shared schema (steps 17 to 22)
+
+36. **Column Resorter**: puts the 56 shared columns in order.
+37. **CSV Writer**: writes outputs/knime/results_<run_id>.csv.
+38. **Parquet Writer**: writes the Parquet copy if wanted.
+39. **Timer Info**: node run times for the run rows.
+
+Optional: **Python Script** if you would rather run scikit learn or XGBoost exactly as Python does. Put each step in its own metanode or component named "1 Load and control totals" to "6 Output", and put the per part read and check inside the loop.
+
+### Fewer expression nodes
+
+One Column Expressions node can create many output columns, each with its own expression. Math Formula (Multi Column) applies one formula to many columns. Aim for about 8 to 10 expression nodes in total, grouped like this:
+
+| Expression node | Where | Columns it creates |
+|---|---|---|
+| E1 Source | Step 1 | source path choice, chain of custody fields |
+| E2 Data quality | Step 2 | null flags, negative amount flag, timestamp range flags |
+| E3 Banking row features | Step 3, B1 | day, log_amount, near_threshold, declined, is_debit, foreign, lead_digit, channel_card, channel_mobile, channel_web, channel_branch, channel_atm (hour and weekday from Extract Date&Time Fields) |
+| E4 Banking joined features | Step 3, after the B2 and GroupBy joins | secs_since_prev, secs_to_next (cap and default from the lagged differences), country_change_fast, amount_z, acct_dormant, amount_vs_expected, missing fills for counts |
+| E5 Telecom row features | Step 3, T4 | day, log_amount, round_amount, has_reversal, type_p2p, type_cash_in, type_cash_out, type_merchant, type_airtime |
+| E6 Telecom joined features | Step 3, after the T5, T3 and GroupBy joins | secs_since_prev, secs_to_next, wallet_limit, over_tier, wallet_dormant, amount_z, hours_since_swap |
+| E7 Rule fields | Step 4 | rule_id, scenario, model = "rule", score, threshold, predicted_label |
+| E8 Model | Step 5 | label, predicted_label, the five threshold changes, precision and recall at each point |
+| E9 Output shaping | Step 6 | record_type, stack = "knime", run_id, created_at, Benford expected_share, odds_ratio |
+| M1 Model transform | Step 5 | Math Formula (Multi Column): sign(x) times ln(1 + abs(x)) on every model feature |
+
+Not in expression nodes:
+1. Previous row values come from Lag Column, then Date&Time Difference; rolling windows come from Moving Aggregation.
+2. Counts and sums per entity, day, merchant or agent (ent_day_count, ent_day_sum, ent_count, merch_day_count, agent_day_count, entity mean and standard deviation) come from GroupBy plus Joiner.
+3. Anything repeated per part file goes inside one loop (Table Row To Variable Loop Start to Loop End), not in copied nodes.
+
+Column Expressions is marked as legacy in recent KNIME versions, where a node called Expression does the same job. We are not sure which your version shows; either is fine.
+
+Paste this into Copilot:
+
+> Rebuild this workflow with no more than 10 expression nodes. Use Column Expressions (or Expression) nodes with many output columns each, grouped like this: E1 source, E2 data quality, E3 banking row features, E4 banking joined features, E5 telecom row features, E6 telecom joined features, E7 rule fields, E8 model, E9 output shaping, plus one Math Formula (Multi Column) for the model transform. Use Lag Column and Date&Time Difference for previous row logic and Moving Aggregation for rolling windows. Use GroupBy plus Joiner for counts and sums per entity and day. Read the Parquet parts in one Table Row To Variable Loop Start and Loop End loop. Put each pipeline step in its own metanode. Use only the nodes listed in the Nodes you need section.
+
 ## Build steps in KNIME (UNTESTED DESIGN)
 
 Build one workflow, fraud_pipeline, with six metanodes named "1 Load and control totals" to "6 Output". Use workflow variables DOMAIN (banking or telecom), SOURCE (sample_url or local_full) and REPO_DIR. Turn on the Columnar Backend (File, Preferences, Table Backend) and raise -Xmx in knime.ini for full data.

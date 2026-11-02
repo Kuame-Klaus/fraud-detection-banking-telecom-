@@ -35,3 +35,7 @@ Option 2, loop:
 3. Loop End to concatenate.
 
 Check the total row count against the manifest. This has not been run in KNIME here.
+
+## Nodes you need
+
+The short list of what this build needs, grouped by pipeline step, and how to keep expressions to about 8 to 10 nodes, is in the "Nodes you need" section of docs/knime_build_prompt.md. The rest of the palette is not needed.
