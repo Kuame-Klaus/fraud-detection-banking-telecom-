@@ -684,6 +684,95 @@ Privileged user list for R_B12: all B8 user_id where permission = "admin_gl".
 7. Run rows: runtime_seconds and peak_memory_mb per stage (load, data_quality, features, rules, model, output) and a total row.
 8. Agreement rows are not written by Python yet. When this build exists, compare its predicted labels with Python's on the same record_id.
 
+## Tools you need
+
+Copilot can list the whole Alteryx palette (over 200 tools). This build needs only the 35 tools below, grouped by pipeline step. Every other tool in the palette is not needed for this build.
+
+Where a name or option is uncertain it says so. Check it in your Designer version rather than trusting this list blindly.
+
+### Input of the Parquet parts (steps 1 and 2)
+
+1. **Input Data**: reads config/sources.csv, data/full/manifest.json and the Parquet parts (Parquet needs a recent Designer; the notes say 2023.1 or later, which we have not confirmed).
+2. **Text Input**: holds the source switch value and small fixed lists (scenario list, the five threshold changes).
+3. **Download**: fetches each sample CSV from its raw GitHub URL in sample mode.
+4. **JSON Parse**: turns manifest.json into rows of dataset, path, rows and sha256.
+5. **Text To Columns**: splits the downloaded CSV text into rows and columns, and splits JSON paths.
+6. **Control Parameter**: the input of the batch macro KK_ReadDataset, one row per part file.
+7. **Macro Input**: the data input of each macro.
+8. **Macro Output**: the data output of each macro.
+9. **Message**: stops the run when a part's row count does not match the manifest.
+
+### Step 1 Load and control totals
+
+10. **Select**: sets field types and names as in the schema section, and keeps only needed fields.
+11. **DateTime**: parses timestamps with the custom format %Y-%m-%dT%H:%M:%SZ.
+12. **Record ID**: numbers rows inside a part for the row count check.
+13. **Summarize**: row counts and amount sums per dataset and month (also used in every later step).
+
+### Step 2 Data quality
+
+14. **Unique**: finds duplicate keys.
+15. **Data Cleansing**: optional helper for null and whitespace checks (Formula IsNull is enough if you prefer).
+16. **Filter**: negative amounts, timestamps out of range, and rule conditions later.
+17. **Transpose**: turns columns into rows so null cells can be counted per column.
+
+### Step 3 Features
+
+18. **Sort**: entity then time, before every window calculation.
+19. **Multi Row Formula**: previous and next row logic (secs_since_prev, secs_to_next, country_change_fast, and the R_B09 and R_T10 windows). One Multi Row Formula tool creates or updates one field, so you need one per field.
+20. **Formula**: all row level expressions, grouped into a few tools as described below.
+21. **Multi-Field Formula**: applies the same expression to many fields at once (the model transform of every feature).
+22. **Join**: adds B2 to B1, T5 and T3 to T4, and joins Summarize results back to rows.
+23. **Union**: stacks outputs (left unmatched rows for left outer joins, rule outputs, result record types).
+24. **Append Fields**: attaches a single value (threshold, means and standard deviations) to every row.
+
+### Step 4 Rules
+
+Rules reuse Filter, Formula, Summarize, Join and Multi Row Formula from above, inside one batch or standard macro per rule (KK_Rule_<rule_id>). No new tools are needed.
+
+### Step 5 Model
+
+25. **Logistic Regression**: the default model per domain (Predictive tools, which need the Alteryx predictive install). We are not sure it supports balanced class weights exactly as Python does; if it does not, use the Python tool below with scikit learn LogisticRegression so the results match.
+26. **Score**: applies the trained model to every row to get a score.
+27. **Python**: runs XGBoost for the optional XGBoost model (Alteryx has no tool named XGBoost; Boosted Model uses a different method and will not match Python's numbers). It can also run the logistic regression if the Logistic Regression tool cannot match.
+28. **Tile**: score bands 0.0 to 0.1 up to 0.9 to 1.0 for drift.
+29. **Running Total**: cumulative alerts and detected cases down the sorted scores for the precision and recall curve.
+
+### Step 6 Output to the shared schema (steps 17 to 22)
+
+30. **Cross Tab**: wide tables for Benford and drift checks before shaping to long rows.
+31. **Generate Rows**: the digits 1 to 9 for Benford and the 101 recall levels for the curve.
+32. **Output Data**: writes outputs/alteryx/results_<run_id>.csv (and Parquet if your version supports it).
+33. **Tool Container**: the six named containers, one per step.
+34. **Browse**: checks results while building (optional, remove before the full run).
+35. **Directory**: lists the part files in a folder when you want a check that matches the manifest (optional; the wildcard in Input Data also works).
+
+### Fewer Formula tools
+
+A workflow with more than 100 separate Formula tools is hard to check and slow to edit. One Formula tool can hold many expressions, each creating or updating one field, evaluated top to bottom. Aim for about 8 to 10 Formula tools in total, grouped like this:
+
+| Formula tool | Where | Expressions it holds |
+|---|---|---|
+| F1 Source | Step 1 | source path choice (raw_url or local_full_path), chain of custody fields |
+| F2 Data quality | Step 2 | IsNull flags, negative amount flag, month key DateTimeFormat([time],"%Y-%m"), timestamp range flags |
+| F3 Banking row features | Step 3, B1 | day, hour, weekday, log_amount, near_threshold, declined, is_debit, foreign, lead_digit, channel_card, channel_mobile, channel_web, channel_branch, channel_atm |
+| F4 Banking joined features | Step 3, after the B2 join and Summarize joins | amount_z, acct_dormant, amount_vs_expected, null fills for ent_day_count, ent_day_sum, ent_count, merch_day_count (reversal_flag comes from B1 as is) |
+| F5 Telecom row features | Step 3, T4 | day, hour, weekday, log_amount, round_amount, has_reversal, type_p2p, type_cash_in, type_cash_out, type_merchant, type_airtime |
+| F6 Telecom joined features | Step 3, after the T5, T3 and Summarize joins | wallet_limit, over_tier, wallet_dormant, amount_z, hours_since_swap, null fill for agent_day_count |
+| F7 Rule flags | Step 4 | the rule_id, scenario, model = "rule", score = 1.0, threshold = 1.0, predicted_label = 1 fields shared by every rule macro, plus the condition fields for the B1 and T4 rules |
+| F8 Model | Step 5 | split, label, predicted_label, the five threshold changes, score band |
+| F9 Output shaping | Step 6 | record_type, stack = "alteryx", run_id, created_at, first digit and expected_share for Benford, odds_ratio = exp(coefficient) |
+
+Not in Formula tools:
+1. Previous or next row logic goes in Multi Row Formula: secs_since_prev, secs_to_next and country_change_fast (banking), secs_since_prev and secs_to_next (telecom), plus the R_B09 and R_T10 rule windows. That is about 7 Multi Row Formula tools.
+2. Counts and sums per entity, day, merchant or agent (ent_day_count, ent_day_sum, ent_count, merch_day_count, agent_day_count, entity mean and standard deviation) come from Summarize plus Join, not Formula.
+3. The sign(x) times ln(1 + abs(x)) transform and standardisation of all model features is one Multi-Field Formula tool.
+4. Anything repeated per part file (reading, row count check against the manifest) goes in the batch macro KK_ReadDataset, not in copied tools.
+
+Paste this into Copilot:
+
+> Rebuild this workflow with no more than 10 Formula tools. Put many expressions in each Formula tool and group them like this: F1 source, F2 data quality, F3 banking row features, F4 banking joined features, F5 telecom row features, F6 telecom joined features, F7 rule flags, F8 model, F9 output shaping. Use Multi Row Formula only for previous or next row logic (secs_since_prev, secs_to_next, country_change_fast, R_B09, R_T10). Use Summarize plus Join for counts and sums per entity and day. Use one Multi-Field Formula for the model transform. Put anything repeated per Parquet part file in one batch macro. Use only these tools: Input Data, Text Input, Download, JSON Parse, Text To Columns, Control Parameter, Macro Input, Macro Output, Message, Select, DateTime, Record ID, Summarize, Unique, Data Cleansing, Filter, Transpose, Sort, Multi Row Formula, Formula, Multi-Field Formula, Join, Union, Append Fields, Logistic Regression, Score, Python, Tile, Running Total, Cross Tab, Generate Rows, Output Data, Tool Container, Browse, Directory.
+
 ## Build steps in Alteryx (UNTESTED DESIGN)
 
 Build one workflow, fraud_pipeline.yxmd, with six Tool Containers named "1 Load and control totals" to "6 Output". Run it twice, with a Workflow constant DOMAIN set to banking, then telecom (or build two copies). Use the AMP engine for full data. Store paths in Workflow constants: SOURCE (sample_url or local_full), REPO_DIR (the local clone).

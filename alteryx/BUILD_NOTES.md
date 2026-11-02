@@ -29,3 +29,7 @@ The full SYNTHETIC dataset is committed under data/full/<domain>/<dataset>/part_
 4. Compare the row count with the `rows` value for that dataset in data/full/manifest.json.
 
 This has not been run in Alteryx here.
+
+## Tools you need
+
+The short list of what this build needs, grouped by pipeline step, and how to keep expressions to about 8 to 10 nodes, is in the "Tools you need" section of docs/alteryx_build_prompt.md. The rest of the palette is not needed.
