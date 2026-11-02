@@ -23,12 +23,16 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = Path(__file__).resolve().parent
 SRC = ROOT / "outputs/sample/results_latest.csv"
 
-# Theme from docs/powerbi_design.md
-LIGHT = ["#9DC3E6", "#F4B183", "#A9D18E", "#D9D9D9", "#BDD7EE", "#FFE699", "#595959"]
-C = dict(data=["#1F4E79", "#C55A11", "#548235", "#7F7F7F", "#2E75B6", "#BF9000", "#A5A5A5", "#70AD47"],
-         fg="#222222", label="#444444", accent="#1F4E79", good="#548235", neutral="#BF9000", bad="#C00000",
-         center="#F2F2F2", bg="#FFFFFF")
-STACK = {"python": "#1F4E79", "alteryx": "#C55A11", "knime": "#548235"}
+# Theme D from docs/powerbi_design.md (chosen by Klaus Konsults): navy, teal, amber, coral on white, Arial
+NAVY, TEAL, AMBER, CORAL = "#1B2A49", "#0F9D9A", "#F2A900", "#F26B5B"
+PAL = [(NAVY, "#FFFFFF"), (TEAL, "#FFFFFF"), (AMBER, NAVY), (CORAL, NAVY)]  # (fill, text on it): amber and coral get navy text
+DARK = [NAVY, TEAL]
+LIGHT = ["#8B95AA", "#87CECC", "#F8D47F", "#F8B5AD", "#D5DAE1", "#C3E6E5", "#6B7280"]
+C = dict(data=[NAVY, TEAL, AMBER, CORAL, "#4A5D85", "#5CC2BF", "#B07B00", "#B8483B"],
+         fg=NAVY, label="#4A5568", accent=NAVY, good=TEAL, neutral=AMBER, bad="#C8473A",
+         center="#F3F5F8", bg="#FFFFFF", border="#D5DAE1", muted="#6B7280")
+STACK = {"python": NAVY, "alteryx": TEAL, "knime": CORAL}
+SLI = [0]
 
 FONT = "Arial" if any("Arial" == f.name for f in font_manager.fontManager.ttflist) else "Liberation Sans"
 plt.rcParams.update({"font.family": FONT, "font.size": 10, "text.color": C["fg"], "axes.edgecolor": "#BBBBBB",
@@ -48,21 +52,22 @@ T = lambda t: r[r["record_type"] == t]
 
 def page(num, title, note, slicers):
     fig = plt.figure(figsize=(16, 9), dpi=100, facecolor=C["bg"])
-    fig.text(0.025, 0.955, f"{num}. {title}", fontsize=20, color=C["fg"], va="center")
+    fig.add_artist(Rectangle((0, 0.99), 1, 0.01, transform=fig.transFigure, fc=NAVY, ec="none"))
+    fig.text(0.025, 0.955, f"{num}. {title}", fontsize=20, fontweight="bold", color=C["fg"], va="center")
     fig.text(0.025, 0.915, note, fontsize=11, color=C["label"], va="center")
     x = 0.025
     w = (0.95 - 0.01 * 4) / 5
     for name, val in slicers:
         ax = fig.add_axes([x, 0.845, w, 0.045]); ax.axis("off")
         ax.add_patch(FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0,rounding_size=0.08",
-                                    fc=C["center"], ec="#D0D0D0", transform=ax.transAxes))
+                                    fc=C["center"], ec=C["border"], transform=ax.transAxes))
         ax.text(0.04, 0.5, f"{name}:", fontsize=10, color=C["label"], va="center", transform=ax.transAxes)
-        ax.text(0.96, 0.5, val, fontsize=10, color=C["accent"], va="center", ha="right", transform=ax.transAxes)
-        x += w + 0.01
-    fig.add_artist(plt.Line2D([0.025, 0.975], [0.06, 0.06], color="#DDDDDD", lw=1))
+        ax.text(0.96, 0.5, val, fontsize=10, fontweight="bold", color=DARK[SLI[0] % len(DARK)], va="center", ha="right", transform=ax.transAxes)
+        x += w + 0.01; SLI[0] += 1
+    fig.add_artist(plt.Line2D([0.025, 0.975], [0.06, 0.06], color=C["border"], lw=1))
     fig.text(0.025, 0.035, "SYNTHETIC data. Klaus Konsults.", fontsize=10, color=C["label"], va="center")
     fig.text(0.975, 0.035, f"Mockup, not a Power BI build. Source: outputs/sample/results_latest.csv, run {RUN}, commit {COMMIT}",
-             fontsize=9, color="#888888", va="center", ha="right")
+             fontsize=9, color=C["muted"], va="center", ha="right")
     return fig
 
 
@@ -70,24 +75,30 @@ def slic(domain="banking", stack="python", scen="All", month="All", thr="0%"):
     return [("Domain", domain), ("Stack", stack), ("Scenario", scen), ("Month", month), ("Threshold change", thr)]
 
 
-def card(fig, rect, label, value):
+def card(fig, rect, label, value, i=[0]):
+    """Each KPI card gets its own palette colour: a coloured band with the label, the value below it."""
+    col, tc = PAL[i[0] % len(PAL)]; i[0] += 1
     ax = fig.add_axes(rect); ax.axis("off")
-    ax.add_patch(Rectangle((0, 0), 1, 1, fc=C["bg"], ec="#DDDDDD", transform=ax.transAxes))
-    ax.text(0.5, 0.6, value, fontsize=26, color=C["accent"], ha="center", va="center", transform=ax.transAxes)
-    ax.text(0.5, 0.22, label, fontsize=11, color=C["label"], ha="center", va="center", transform=ax.transAxes)
+    ax.add_patch(Rectangle((0, 0), 1, 1, fc="#FFFFFF", ec=C["border"], transform=ax.transAxes, clip_on=False))
+    ax.add_patch(Rectangle((0, 0.84), 1, 0.16, fc=col, ec=col, transform=ax.transAxes, clip_on=False))
+    ax.text(0.5, 0.92, label, fontsize=11, color=tc, ha="center", va="center", fontweight="bold", transform=ax.transAxes)
+    ax.text(0.5, 0.42, value, fontsize=30, color=col if tc == "#FFFFFF" else C["fg"], ha="center", va="center", fontweight="bold", transform=ax.transAxes)
+    ax.add_patch(Rectangle((0.3, 0.12), 0.4, 0.04, fc=col, ec=col, transform=ax.transAxes))
 
 
 def table(fig, rect, df, title=None, colw=None, fs=10, red=None):
     ax = fig.add_axes(rect); ax.axis("off")
     if title:
-        ax.set_title(title, loc="left", fontsize=12, pad=6)
+        ax.set_title(title, loc="left", fontsize=12, pad=6, fontweight="bold", color=NAVY)
     t = ax.table(cellText=df.values, colLabels=list(df.columns), loc="upper left", cellLoc="left", colLoc="left",
                  colWidths=colw, bbox=[0, 0, 1, 1])
     t.auto_set_font_size(False); t.set_fontsize(fs)
     for (i, j), c in t.get_celld().items():
-        c.set_edgecolor("#E3E3E3"); c.get_text().set_fontfamily(FONT)
-        if i == 0:
-            c.set_facecolor(C["accent"]); c.get_text().set_color("white")
+        c.set_edgecolor(C["border"]); c.get_text().set_fontfamily(FONT)
+        if i > 0:
+            c.set_facecolor(C["center"] if i % 2 == 0 else "#FFFFFF")
+        if i == 0:  # headers cycle through the palette
+            c.set_facecolor(PAL[j % len(PAL)][0]); c.get_text().set_color(PAL[j % len(PAL)][1]); c.get_text().set_fontweight("bold")
         elif red is not None and red(i - 1):
             c.get_text().set_color(C["bad"])
     return ax
@@ -142,7 +153,7 @@ xr = M[(M.model == MODEL) & (M.metric == "recall") & (M.domain == "banking") & (
 scen = sorted(rr.index)
 mat = np.array([[rr.get(s, np.nan), xr.get(s, np.nan), np.nan, np.nan] for s in scen])
 ax = fig.add_axes([0.25, 0.1, 0.62, 0.7])
-cm = matplotlib.colors.LinearSegmentedColormap.from_list("kk", ["#FFFFFF", C["accent"]])
+cm = matplotlib.colors.LinearSegmentedColormap.from_list("kk", ["#FFFFFF", TEAL, NAVY])
 ax.imshow(np.nan_to_num(mat, nan=0), cmap=cm, vmin=0, vmax=1, aspect="auto")
 for i in range(len(scen)):
     for j in range(4):
@@ -216,7 +227,7 @@ if len(eb):
         G.add_edge(e.source_id, e.target_id, w=e.edge_weight)
     pos = nx.spring_layout(G, seed=42, k=0.35)
     ws = np.array([G[u][v]["w"] for u, v in G.edges()])
-    nx.draw_networkx_edges(G, pos, ax=ax, width=0.5 + 3 * ws / ws.max(), edge_color="#9DB3C9", arrows=False)
+    nx.draw_networkx_edges(G, pos, ax=ax, width=0.5 + 3 * ws / ws.max(), edge_color="#87CECC", arrows=False)
     src = {u for u, _ in G.edges()}
     nx.draw_networkx_nodes(G, pos, ax=ax, node_size=28, node_color=[C["accent"] if n in src else C["data"][3] for n in G.nodes()])
     ax.set_title(f"Banking account network: {len(eb)} edges from the results file (sending accounts in blue)", fontsize=12)

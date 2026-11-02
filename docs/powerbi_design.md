@@ -180,40 +180,60 @@ Pages 10 and 11 ignore the scenario slicer, because DQ and runtime rows have no 
 
 ## Theme
 
-Plain English and calm: Arial throughout, sentence case titles, dark text on white, one accent colour per stack so the three tools read the same on every page.
+Theme D, chosen by Klaus Konsults: navy #1B2A49, teal #0F9D9A, amber #F2A900 and coral #F26B5B on a white background, Arial throughout, sentence case titles. The theme file to import in Power BI Desktop (View, Themes, Browse for themes) is powerbi/klaus_konsults_theme_d.json:
 
 ```json
 {
-  "name": "Klaus Konsults Plain",
-  "dataColors": ["#1F4E79", "#C55A11", "#548235", "#7F7F7F", "#2E75B6", "#BF9000", "#A5A5A5", "#70AD47"],
+  "name": "Klaus Konsults Theme D",
+  "dataColors": ["#1B2A49", "#0F9D9A", "#F2A900", "#F26B5B", "#4A5D85", "#5CC2BF", "#B07B00", "#B8483B"],
   "background": "#FFFFFF",
-  "foreground": "#222222",
-  "tableAccent": "#1F4E79",
-  "good": "#548235",
-  "neutral": "#BF9000",
-  "bad": "#C00000",
-  "maximum": "#1F4E79",
-  "center": "#F2F2F2",
+  "foreground": "#1B2A49",
+  "tableAccent": "#1B2A49",
+  "good": "#0F9D9A",
+  "neutral": "#F2A900",
+  "bad": "#C8473A",
+  "maximum": "#1B2A49",
+  "center": "#0F9D9A",
   "minimum": "#FFFFFF",
   "textClasses": {
-    "title": { "fontFace": "Arial", "fontSize": 14, "color": "#222222" },
-    "header": { "fontFace": "Arial", "fontSize": 12, "color": "#222222" },
-    "label": { "fontFace": "Arial", "fontSize": 10, "color": "#444444" },
-    "callout": { "fontFace": "Arial", "fontSize": 24, "color": "#1F4E79" }
+    "title": { "fontFace": "Arial", "fontSize": 14, "color": "#1B2A49" },
+    "header": { "fontFace": "Arial", "fontSize": 12, "color": "#1B2A49" },
+    "label": { "fontFace": "Arial", "fontSize": 10, "color": "#4A5568" },
+    "callout": { "fontFace": "Arial", "fontSize": 24, "color": "#1B2A49" }
   },
   "visualStyles": {
     "*": {
       "*": {
-        "title": [{ "fontFamily": "Arial", "fontSize": 12, "show": true }],
+        "title": [{ "fontFamily": "Arial", "fontSize": 12, "fontColor": { "solid": { "color": "#1B2A49" } }, "bold": true, "show": true }],
         "background": [{ "color": { "solid": { "color": "#FFFFFF" } } }],
-        "border": [{ "show": false }]
+        "border": [{ "show": true, "color": { "solid": { "color": "#D5DAE1" } } }]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "columnHeaders": [{ "fontFamily": "Arial", "bold": true, "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1B2A49" } } }],
+        "values": [{ "fontFamily": "Arial", "backColorPrimary": { "solid": { "color": "#FFFFFF" } }, "backColorSecondary": { "solid": { "color": "#F3F5F8" } } }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "fontFamily": "Arial", "bold": true, "color": { "solid": { "color": "#1B2A49" } } }]
       }
     }
   }
 }
 ```
 
-Stack colours: Python #1F4E79, Alteryx #C55A11, KNIME #548235. Every page has a one line plain English note under the title saying what the page answers, and a footer reading "SYNTHETIC data. Klaus Konsults."
+Multi colour rules (as in the mockups):
+1. Each KPI card on a page gets its own palette colour in order navy, teal, amber, coral: a coloured band holding the label, and the value below it.
+2. Table and matrix headers cycle through the palette column by column. Body rows are zebra striped white and #F3F5F8.
+3. Text on navy or teal is white; text on amber or coral is dark navy #1B2A49, for contrast.
+4. Slicer values alternate navy and teal. Page titles are bold navy with a thin navy bar at the top of the page.
+5. Stack colours: Python navy, Alteryx teal, KNIME coral.
+
+Every page has a one line plain English note under the title saying what the page answers, and a footer reading "SYNTHETIC data. Klaus Konsults."
+
+The six candidate themes A to F are kept as an archive in docs/powerbi_mockups/theme_options/ (theme_A.png to theme_F.png). Theme D was chosen.
 
 ## Pages
 
