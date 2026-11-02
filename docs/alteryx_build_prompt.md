@@ -635,7 +635,7 @@ Every threshold is an ASSUMPTION default from the code, not a client parameter. 
 | R_B06 | impossible_travel | B1 | account_id | timestamp | sort by account_id, timestamp. Flag a pair of consecutive rows of the same account when both have channel = "card" and response_code = "00", the second is at most 1,800 seconds after the first, the countries differ, one is GH and the other GB or US. Flag both rows of the pair |
 | R_B07 | reversal_abuse | B1 | account_id | timestamp | reversal_flag = 1 AND sum of reversal_flag for the account >= 3 |
 | R_B08 | account_takeover | B1 | account_id | timestamp | channel = "web" AND amount > 2,500 AND secs_since_prev < 1,800 |
-| R_B09 | account_takeover | B4 | person_id (person) | timestamp | sort by person_id, timestamp. An anchor is a password_reset with geo not GH whose 2 previous rows (same person) are both login_failed with the same device_id and ip as the reset and at most 900 seconds before it. Flag the anchor, its 2 previous rows, and each of the next 2 rows of the same person that are at most 900 seconds after the reset (see python/pipeline/rules.py ato_auth_proposed) |
+| R_B09 | account_takeover | B4 | person_id (person) | timestamp | sort by person_id, timestamp. An anchor is a password_reset with geo not GH whose 2 previous rows (same person) are both login_failed with the same device_id and ip as the reset and at most 900 seconds before it. Flag the anchor, its 2 previous rows, and each of the next 2 rows of the same person that are at most 900 seconds after the row 1 or 2 places before them (see python/pipeline/rules.py ato_auth_proposed) |
 | R_B10 | journal_abuse | B7 | preparer_id (user) | entry_timestamp | is_manual is true AND (debit + credit) is a multiple of 10,000 AND (debit + credit) > 0 AND (weekday of entry_timestamp is Saturday or Sunday OR hour < 5) |
 | R_B11 | segregation_of_duties | B7 | preparer_id | entry_timestamp | preparer_id = approver_id |
 | R_B12 | privileged_access_before_journals | B7 | preparer_id | entry_timestamp | preparer_id is in the list of B8 user_id where permission = "admin_gl" AND is_manual is true |
@@ -665,12 +665,13 @@ Privileged user list for R_B12: all B8 user_id where permission = "admin_gl".
 
 1. Label: 1 when synthetic_scenario is not empty, else 0. On client data the label comes from B12 or T10.
 2. Split on the event time: before 2025-10-01 is train, 2025-10-01 up to before 2025-11-01 is validation, from 2025-11-01 is test.
-3. Python uses XGBoost, trained on a stratified sample when the training split is large (all positives kept, negatives sampled so training stays at or under 2,000,000 rows; on the sample no sampling happens). Settings: (300 trees, depth 6, learning rate 0.1, subsample 0.8, column sample 0.8, positive class weight = negatives divided by positives in train, early stopping 30 rounds on validation PR AUC, seed 42). This build uses the tool's own learner instead (see the step table), so scores will differ from Python by design.
+3. The default model (round 7, approved by Klaus Konsults) is logistic regression per domain, trained on the same stratified sample (all positives kept, negatives sampled so training stays at or under 2,000,000 rows; on the sample no sampling happens). Each feature x is transformed to sign(x) times ln(1 + abs(x)), then standardised with the train mean and standard deviation (a standard deviation of 0 is set to 1). Settings: L2 penalty, C = 1.0, balanced class weights (each class weighted by rows / (2 x class rows)), lbfgs solver, up to 2,000 iterations, seed 42. Use the Alteryx Logistic Regression tool with the same transform and weights. Write one coefficient row per feature (record_type coefficient: step = rank by absolute coefficient, feature, coefficient, odds_ratio = exp(coefficient)). XGBoost is kept in Python as an option (--model xgboost) and is not part of this build.
 4. Threshold: the 99th percentile of validation scores (an ASSUMPTION 1% alert budget). predicted_label = 1 when score >= threshold.
 5. Metrics per split (train, validation, test): rows, positives, alert_rate, and when both classes exist pr_auc, roc_auc, precision, recall. Also test recall per planted scenario.
 6. Threshold sweep: on the test split, threshold times (1 + p/100) for p in minus 20, minus 10, 0, 10, 20; record alert_count and detected_count.
 7. Drift: score bands 0.0 to 0.1 up to 0.9 to 1.0, share of rows per band per month, over all splits.
 8. Score rows are written for the test split only.
+9. Precision and recall curve: on the test split, compute precision and recall at every distinct score (as sklearn precision_recall_curve), then for each recall level 0, 0.01, up to 1 keep the point with the highest threshold whose recall is at least that level (duplicates removed, so up to 101 points). Write record_type pr_curve with step, threshold, curve_precision, curve_recall, split = test, scenario = all.
 
 ## Step 6 extras, as python/pipeline/run.py
 
@@ -679,7 +680,7 @@ Privileged user list for R_B12: all B8 user_id where permission = "admin_gl".
 3. Benford: first digit counts for B1 amount, B7 debit and T4 amount (values >= 1 only), digits 1 to 9, expected_share = log10(1 + 1/d).
 4. Edges, banking: B1 rows where synthetic_scenario = "mule_network" OR (direction = "debit" AND amount > 5,000); keep debits; group by account_id and counterparty_account; edge_weight = sum of amount, edge_count = rows; entity_type "account".
 5. Edges, telecom: T4 rows with agent_day_count >= 8; group by agent_id and wallet_id; entity_type "agent".
-6. Geo: T1 minutes (duration_sec / 60) per route and day, joined (outer) to T8 minutes per route and traffic_date; the day goes in month; note "latitude and longitude not available, see docs/open_questions.md".
+6. Geo: T1 minutes (duration_sec / 60) per route and day, joined (outer) to T8 minutes per route and traffic_date; the day goes in month; note "route day rows; cell site rows below carry SYNTHETIC latitude and longitude". Then one geo row per T1 cell_id with geo_minutes = T1 minutes over the whole period and SYNTHETIC latitude and longitude read from the Python output (python/pipeline/geo.py is seeded; copy the cell_id, latitude, longitude columns rather than re-deriving them), note "SYNTHETIC cell site location near <town>, not a real site".
 7. Run rows: runtime_seconds and peak_memory_mb per stage (load, data_quality, features, rules, model, output) and a total row.
 8. Agreement rows are not written by Python yet. When this build exists, compare its predicted labels with Python's on the same record_id.
 
@@ -749,8 +750,10 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 7. agreement: one row per pair of tools per model and scenario.
 8. edge: one row per link in the mule or agent network.
 9. benford: one row per first digit per dataset.
-10. geo: one row per route or cell per day.
+10. geo: one row per route per day, and one row per cell site with SYNTHETIC latitude and longitude.
 11. run: one row per run with runtime and memory.
+12. pr_curve: one row per precision and recall curve point per model, domain and split.
+13. coefficient: one row per logistic regression feature per domain.
 
 ## Columns
 
@@ -763,7 +766,7 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 | domain | string | all | banking or telecom |
 | dataset_id | string | dq, benford, geo | for example B1 or T8 |
 | scenario | string | score, metric, coverage, threshold, agreement | scenario name from docs/scenario_coverage.md, or all |
-| model | string | score, metric, threshold, drift, agreement | for example xgboost, rule, or the built in learner name |
+| model | string | score, metric, threshold, drift, agreement | logistic_regression (default), xgboost (Python option), or rule |
 | rule_id | string | score, coverage, threshold | rule identifier, if a rule fired |
 | split | string | score, metric | train, validation or test |
 | record_id | string | score | id of the input row, identical across stacks |
@@ -805,18 +808,23 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 | expected_share | float | benford | Benford expected share for that digit |
 | route | string | geo | T1 or T8 route |
 | cell_id | string | geo | T1 or T9 cell id |
-| latitude | float | geo | cell latitude (open question, see docs/open_questions.md) |
-| longitude | float | geo | cell longitude (open question) |
+| latitude | float | geo | SYNTHETIC cell site latitude, not a real site |
+| longitude | float | geo | SYNTHETIC cell site longitude, not a real site |
 | geo_minutes | float | geo | minutes on the route or cell that day |
 | geo_settled_minutes | float | geo | settled minutes from T8, if any |
 | runtime_seconds | float | run, metric | measured runtime |
 | peak_memory_mb | float | run, metric | measured peak memory, if available |
 | stage | string | run | stage name from docs/pipeline_steps.md |
+| feature | string | coefficient | model feature name |
+| coefficient | float | coefficient | logistic regression coefficient per 1 standard deviation |
+| odds_ratio | float | coefficient | exp(coefficient) |
+| curve_precision | float | pr_curve | precision at the curve point |
+| curve_recall | float | pr_curve | recall at the curve point |
 
 
 ## Acceptance checks on the sample
 
-Expected values come from the committed outputs/sample/results_python_sample.parquet (run_id python_sample, approved rules of round 6, generator with Benford clusters on one account month). That file holds these rows per record_type: score 17,619, geo 14,137, edge 1,201, metric 220, drift 216, dq 184, coverage 27, benford 27, threshold 10, run 7. Rule totals over all rules: planted rows 514, alerts 751, detected 490.
+Expected values come from the committed outputs/sample/results_python_sample.parquet (run_id python_sample, round 7: approved rules, logistic regression default model, generator with Benford clusters on one account month). That file holds these rows per record_type: score 17,619, geo 14,162, edge 1,201, drift 240, metric 220, dq 184, coefficient 45, pr_curve 44, coverage 27, benford 27, threshold 10, run 7. Rule totals over all rules: planted rows 514, alerts 751, detected 490.
 
 ### Control totals and data quality
 
@@ -1052,4 +1060,11 @@ Rule outputs are deterministic, so the Alteryx build must match these alert coun
 
 ### Model
 
-The Alteryx learner differs from XGBoost, so model scores, alerts and metrics are not expected to match Python. Check instead that the split sizes match, the threshold sits at the validation 99th percentile, and every metric, threshold and drift row is present in the right columns. Compare predicted labels with Python on record_id for step 20.
+Both stacks fit logistic regression with the same transform and weights, but solvers differ, so model scores may differ slightly from Python. Coefficients should agree in sign and rank for the top drivers, and metrics should be close to the Python values below. Check instead that the split sizes match, the threshold sits at the validation 99th percentile, and every metric, threshold and drift row is present in the right columns. Compare predicted labels with Python on record_id for step 20.
+
+Python reference on the sample (logistic regression, test split, SYNTHETIC data):
+
+| domain | rows | positives | alerts | detected | precision | recall | PR AUC |
+|---|---|---|---|---|---|---|---|
+| banking | 8441 | 35 | 68 | 29 | 0.426 | 0.829 | 0.745 |
+| telecom | 8427 | 18 | 83 | 18 | 0.217 | 1.000 | 1.000 |

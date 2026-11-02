@@ -104,8 +104,10 @@ def fmt(v, d=0):
 
 
 S = T("score")
-SX = S[(S.model == "xgboost")]
 M = T("metric")
+MODEL = "logistic_regression" if (M.model == "logistic_regression").any() else "xgboost"
+MLAB = "logistic regression" if MODEL == "logistic_regression" else "XGBoost"
+SX = S[(S.model == MODEL)]
 
 
 def save(fig, n, slug):
@@ -114,7 +116,7 @@ def save(fig, n, slug):
 
 
 # 1 KPI overview
-fig = page(1, "KPI overview", "How many records were scored, how many alerted, and how many planted cases were caught (XGBoost, test split).", slic())
+fig = page(1, "KPI overview", "How many records were scored, how many alerted, and how many planted cases were caught (model, test split).", slic())
 b = SX[SX.domain == "banking"]
 tp = ((b.predicted_label == 1) & (b.true_label == 1)).sum(); al = (b.predicted_label == 1).sum(); pl = (b.true_label == 1).sum()
 for i, (lab, val) in enumerate([("Records scored", fmt(len(b))), ("Alerts", fmt(al)),
@@ -126,7 +128,7 @@ for st in ["python", "alteryx", "knime"]:
         d = SX[(SX.domain == dom) & (SX["stack"] == st)]
         if len(d) == 0:
             rows.append([st, dom, "no run yet", "", "", ""]); continue
-        pa = M[(M.model == "xgboost") & (M.domain == dom) & (M.split == "test") & (M.metric == "pr_auc")]["value"]
+        pa = M[(M.model == MODEL) & (M.domain == dom) & (M.split == "test") & (M.metric == "pr_auc")]["value"]
         rows.append([st, dom, f"{(d.predicted_label == 1).mean():.3f}", fmt(d.loc[d.predicted_label == 1, "amount"].sum(), 2),
                      fmt(d.loc[(d.predicted_label == 1) & (d.true_label == 1), "amount"].sum(), 2), f"{pa.iloc[0]:.3f}" if len(pa) else ""])
 table(fig, [0.025, 0.1, 0.95, 0.42], pd.DataFrame(rows, columns=["Stack", "Domain", "Alert rate", "Alerted amount", "Detected amount", "PR AUC"]),
@@ -136,7 +138,7 @@ save(fig, 1, "kpi_overview")
 # 2 Detection heat map
 fig = page(2, "Detection heat map by scenario and tool", "Share of planted cases each tool caught, per scenario. Darker is better.", slic())
 rr = M[(M.model == "rule") & (M.metric == "recall") & (M.domain == "banking")].groupby("scenario")["value"].max()
-xr = M[(M.model == "xgboost") & (M.metric == "recall") & (M.domain == "banking") & (M.scenario != "all")].set_index("scenario")["value"]
+xr = M[(M.model == MODEL) & (M.metric == "recall") & (M.domain == "banking") & (M.scenario != "all")].set_index("scenario")["value"]
 scen = sorted(rr.index)
 mat = np.array([[rr.get(s, np.nan), xr.get(s, np.nan), np.nan, np.nan] for s in scen])
 ax = fig.add_axes([0.25, 0.1, 0.62, 0.7])
@@ -147,22 +149,22 @@ for i in range(len(scen)):
         v = mat[i, j]
         ax.text(j, i, "no run yet" if j >= 2 else ("none" if np.isnan(v) else f"{v:.2f}"), ha="center", va="center",
                 fontsize=10, color="white" if (not np.isnan(v) and v > 0.6) else C["label"])
-ax.set_xticks(range(4), ["python rule", "python xgboost", "alteryx", "knime"]); ax.xaxis.tick_top()
+ax.set_xticks(range(4), ["python rule", "python " + MLAB, "alteryx", "knime"]); ax.xaxis.tick_top()
 ax.set_yticks(range(len(scen)), [s.replace("_", " ") for s in scen]); ax.tick_params(length=0)
 for s in ax.spines.values():
     s.set_visible(False)
-fig.text(0.885, 0.75, "Recall\n0 to 1\n\nxgboost: test\nsplit only.\n'none' = no\nplanted case\nin test.", fontsize=10, color=C["label"], va="top")
+fig.text(0.885, 0.75, "Recall\n0 to 1\n\nmodel: test\nsplit only.\n'none' = no\nplanted case\nin test.", fontsize=10, color=C["label"], va="top")
 save(fig, 2, "detection_heatmap")
 
 # 3 PR curves and confusion matrices
 fig = page(3, "Precision and recall curves and confusion matrices", "How precision trades against recall as the threshold moves, and the counts at the chosen threshold.", slic())
 ax = fig.add_axes([0.05, 0.12, 0.55, 0.66])
+PC = T("pr_curve")
 for dom, col in [("banking", C["data"][0]), ("telecom", C["data"][5])]:
-    d = SX[SX.domain == dom].sort_values("score", ascending=False)
-    y = d.true_label.to_numpy(); tpc = np.cumsum(y); k = np.arange(1, len(y) + 1)
-    ax.plot(tpc / max(y.sum(), 1), tpc / k, color=col, lw=2, label=f"python {dom}")
+    d = PC[(PC.domain == dom) & (PC.model == MODEL)].sort_values("curve_recall")
+    ax.plot(d.curve_recall, d.curve_precision, color=col, lw=2, label=f"python {dom}")
 ax.set_xlabel("Recall"); ax.set_ylabel("Precision"); ax.set_xlim(0, 1.02); ax.set_ylim(0, 1.05)
-ax.set_title("Curve points computed from XGBoost test score rows", fontsize=12); ax.legend(frameon=False, loc="lower left")
+ax.set_title(f"Curve points from the pr_curve rows ({MLAB}, test split)", fontsize=12); ax.legend(frameon=False, loc="lower left")
 for i, (dom, st) in enumerate([("banking", "python"), ("telecom", "python"), ("banking", "alteryx or knime")]):
     rect = [0.66, 0.56 - i * 0.22, 0.3, 0.19]
     if st != "python":
@@ -191,7 +193,7 @@ ax.legend(frameon=False, fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1.0
 save(fig, 4, "alert_trends")
 
 # 5 Risk leaderboards
-fig = page(5, "Risk leaderboards", "The entities with the highest scores and the largest alerted amounts (XGBoost, test split).", slic())
+fig = page(5, "Risk leaderboards", "The entities with the highest scores and the largest alerted amounts (model, test split).", slic())
 b = SX[SX.domain == "banking"]
 g = b.groupby(["entity_id", "entity_type"]).agg(max_score=("score", "max"), alerted=("amount", lambda s: s[b.loc[s.index, "predicted_label"] == 1].sum()),
                                                 scenario=("true_scenario", lambda s: ", ".join(sorted(set(s.dropna()) - {""})) or "none")).reset_index()
@@ -310,8 +312,15 @@ save(fig, 11, "runtime_memory")
 
 # 12 Routes and cells
 fig = page(12, "Telecom route and cell maps", "Where traffic flows, and which routes carry minutes that were not settled.", slic(domain="telecom"))
-placeholder(fig, [0.025, 0.1, 0.5, 0.68], "PLACEHOLDER: cell map\n\nNo latitude or longitude in the results file yet\n(open question in docs/open_questions.md)")
 Gd = T("geo")
+Gc = Gd[Gd.cell_id.notna() & Gd.latitude.notna()]
+ax = fig.add_axes([0.05, 0.1, 0.45, 0.68])
+if len(Gc):
+    ax.scatter(Gc.longitude, Gc.latitude, s=20 + 180 * Gc.geo_minutes / Gc.geo_minutes.max(), color=C["data"][5], alpha=0.6, edgecolors="none")
+ax.set_xlim(-3.4, 1.3); ax.set_ylim(4.5, 11.3); ax.set_aspect("equal")
+ax.set_xlabel("Longitude"); ax.set_ylabel("Latitude")
+ax.set_title("SYNTHETIC cell site locations in Ghana (not real sites). Bubble size = T1 minutes", fontsize=11)
+Gd = Gd[Gd.cell_id.isna()]
 # Only route days with a T8 settlement row: T8 does not cover every day, and days without a row are not unsettled
 Gd = Gd[Gd.geo_settled_minutes.notna()].assign(geo_minutes=lambda x: x.geo_minutes.fillna(0))
 gr = Gd.groupby("route")[["geo_minutes", "geo_settled_minutes"]].sum()
