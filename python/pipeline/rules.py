@@ -289,19 +289,22 @@ def benford_account_month(d):
     c = P["R_B16"]; a = d["amount"].to_numpy(dtype=float)
     ld = np.zeros(len(a), dtype=int); ok = a >= 1
     ld[ok] = (a[ok] / 10 ** np.floor(np.log10(a[ok]))).astype(int)
-    key = d["account_id"].astype(str) + "|" + d["timestamp"].dt.strftime("%Y-%m")
-    ct = pd.crosstab(key, ld).reindex(columns=range(1, 10), fill_value=0)
+    # integer account month keys and one bincount (same result as the earlier crosstab on text keys)
+    acc, _ = pd.factorize(d["account_id"].astype(str))
+    ts = d["timestamp"]; mon = (ts.dt.year.to_numpy() * 12 + ts.dt.month.to_numpy()).astype(np.int64)
+    mon -= mon.min() if len(mon) else 0
+    nm = int(mon.max()) + 1 if len(mon) else 1
+    key = acc.astype(np.int64) * nm + mon
+    nk = int(key.max()) + 1 if len(key) else 1
+    ct = np.bincount(key * 10 + ld, minlength=nk * 10).reshape(nk, 10)[:, 1:].astype(float)
     n = ct.sum(axis=1); exp = np.outer(n, BENFORD_P)
-    share = ct.div(n.where(n > 0, 1), axis=0)
-    mad = (share - BENFORD_P).abs().mean(axis=1)
+    share = ct / np.where(n > 0, n, 1)[:, None]
+    mad = np.abs(share - BENFORD_P).mean(axis=1)
     p = _chi2.sf((((ct - exp) ** 2) / np.where(exp > 0, exp, 1)).sum(axis=1), 8)
     fail = (n >= c["min_rows"]) & (mad >= c["min_mad"]) & (p <= c["max_p_value"])
-    over = (share - BENFORD_P) > c["over_share"]  # account month by digit
-    fk = set(fail[fail].index)
-    if not fk:
-        return pd.Series(False, index=d.index)
-    o = over.loc[list(fk)].stack(); o = set(o[o].index)
-    return pd.Series([(k, x) in o if k in fk else False for k, x in zip(key, ld)], index=d.index)
+    over = (share - BENFORD_P) > c["over_share"]
+    hit = fail[key] & (ld >= 1) & over[key, np.clip(ld - 1, 0, 8)]
+    return pd.Series(hit, index=d.index)
 
 
 NEW = {"R_B06": travel_proposed, "R_B09": ato_auth_proposed, "R_B16": benford_account_month, "R_T01": simswap_proposed}

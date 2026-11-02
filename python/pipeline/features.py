@@ -26,6 +26,31 @@ def first_digit(x):
     return (x / 10 ** np.floor(np.log10(x))).astype(int)
 
 
+def prior_swap_hours(ms: pd.Series, ts: pd.Series, swaps: pd.DataFrame) -> np.ndarray:
+    """Hours from the latest swap of the same msisdn at or before each timestamp (an as of join), 100,000 when none.
+    One combined sort of swaps and transactions by (msisdn code, time, swap first on ties), then a forward fill
+    of the last swap position within each msisdn. Same result as pandas merge_asof(direction="backward")."""
+    sw = swaps[["msisdn", "swap_time"]].dropna()
+    st = pd.to_datetime(sw["swap_time"]).astype(ts.dtype).to_numpy().view("int64")
+    cats = pd.Index(sw["msisdn"].unique())
+    sc = cats.get_indexer(sw["msisdn"]); tc = cats.get_indexer(ms.fillna("").to_numpy())
+    tt = ts.to_numpy().view("int64"); n_s, n_t = len(st), len(tt)
+    code = np.concatenate([sc, tc]); tim = np.concatenate([st, tt])
+    kind = np.concatenate([np.zeros(n_s, np.int8), np.ones(n_t, np.int8)])  # swap sorts before a transaction at the same time
+    o = np.lexsort((kind, tim, code))
+    pos = np.where(kind[o] == 0, np.arange(len(o)), -1)
+    first = np.r_[True, code[o][1:] != code[o][:-1]]  # reset at each msisdn
+    seg = np.maximum.accumulate(np.where(first, np.arange(len(o)), 0))
+    last = np.maximum.accumulate(pos)
+    last = np.where(last >= seg, last, -1)
+    h = np.full(n_t, 1e5)
+    it = o >= n_s; ti = o[it] - n_s; lt = last[it]
+    okk = (lt >= 0) & (tc[ti] >= 0)
+    unit = np.datetime_data(ts.to_numpy().dtype)[0]
+    h[ti[okk]] = (tt[ti[okk]] - tim[o[lt[okk]]]).astype(f"timedelta64[{unit}]") / np.timedelta64(1, "h")
+    return np.clip(h, None, 1e5)
+
+
 def banking_features(b1: pd.DataFrame, b2: pd.DataFrame) -> pd.DataFrame:
     df = _entity_window(b1, "account_id", "timestamp", "amount")
     df["hour"] = df["timestamp"].dt.hour; df["weekday"] = df["timestamp"].dt.weekday
@@ -76,14 +101,8 @@ def telecom_features(t4: pd.DataFrame, t5: pd.DataFrame, last_swap: pd.Series, a
     swap_t = ms.map(last_swap)
     hrs = (df["timestamp"] - swap_t).dt.total_seconds() / 3600
     df["hours_since_swap"] = hrs.where(hrs >= 0, 1e5).fillna(1e5).clip(upper=1e5)
-    if swaps is not None:  # latest swap at or before each transaction (used by the proposed R_T01 only)
-        x = pd.DataFrame({"msisdn": ms.to_numpy(), "timestamp": df["timestamp"].to_numpy(), "_i": np.arange(len(df))}).dropna(subset=["msisdn"])
-        x = x.sort_values("timestamp")
-        sw = swaps[["msisdn", "swap_time"]].dropna().sort_values("swap_time")
-        sw = sw.assign(swap_time=pd.to_datetime(sw["swap_time"]).astype(x["timestamp"].dtype))
-        j = pd.merge_asof(x, sw, left_on="timestamp", right_on="swap_time", by="msisdn", direction="backward")
-        h = np.full(len(df), 1e5); hh = ((j["timestamp"] - j["swap_time"]).dt.total_seconds() / 3600).fillna(1e5).to_numpy()
-        h[j["_i"].to_numpy()] = hh; df["hours_since_prior_swap"] = np.clip(h, None, 1e5)
+    if swaps is not None:  # latest swap at or before each transaction (used by R_T01)
+        df["hours_since_prior_swap"] = prior_swap_hours(ms, df["timestamp"], swaps)
     else:
         df["hours_since_prior_swap"] = df["hours_since_swap"]
     for x in ["p2p", "cash_in", "cash_out", "merchant", "airtime"]:
