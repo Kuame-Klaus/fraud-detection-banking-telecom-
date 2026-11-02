@@ -44,3 +44,9 @@ Thumbs.db
 !data/full/**
 dist/
 !config/sources.csv
+!outputs/full/
+outputs/full/*
+!outputs/full/alerts_by_scenario.csv
+!outputs/full/metrics_summary.csv
+!outputs/full/results_parts/
+!outputs/full/results_parts/**

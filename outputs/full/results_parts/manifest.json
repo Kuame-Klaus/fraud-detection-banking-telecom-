@@ -1,0 +1,19 @@
+{
+  "source": "results_python_full.parquet",
+  "rows": 8128288,
+  "parts": [
+    {
+      "file": "part_00000.parquet",
+      "rows": 4200000,
+      "bytes": 69183114,
+      "sha256": "8ea70834f8cb90555e8026904f91b10194a82712405eb43ea20da5c353c6da0c"
+    },
+    {
+      "file": "part_00001.parquet",
+      "rows": 3928288,
+      "bytes": 58182484,
+      "sha256": "d81a1db7c086672a3341cc9bbc35c2cd4a8b872b66f12b21aeea644b05e31580"
+    }
+  ],
+  "note": "SYNTHETIC data. Read the folder as one Parquet dataset."
+}
