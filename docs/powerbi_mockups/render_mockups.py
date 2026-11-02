@@ -312,12 +312,14 @@ save(fig, 11, "runtime_memory")
 fig = page(12, "Telecom route and cell maps", "Where traffic flows, and which routes carry minutes that were not settled.", slic(domain="telecom"))
 placeholder(fig, [0.025, 0.1, 0.5, 0.68], "PLACEHOLDER: cell map\n\nNo latitude or longitude in the results file yet\n(open question in docs/open_questions.md)")
 Gd = T("geo")
-gr = Gd.groupby("route")[["geo_minutes", "geo_settled_minutes"]].sum(min_count=1).fillna(0)
+# Only route days with a T8 settlement row: T8 does not cover every day, and days without a row are not unsettled
+Gd = Gd[Gd.geo_settled_minutes.notna()].assign(geo_minutes=lambda x: x.geo_minutes.fillna(0))
+gr = Gd.groupby("route")[["geo_minutes", "geo_settled_minutes"]].sum()
 gr["unsettled"] = gr.geo_minutes - gr.geo_settled_minutes
 gr = gr.sort_values("unsettled", ascending=False).head(18).reset_index()
 table(fig, [0.55, 0.1, 0.425, 0.68], pd.DataFrame({"Route": gr.route, "Route minutes (T1)": gr.geo_minutes.map(lambda v: fmt(v, 1)),
                                                    "Settled minutes (T8)": gr.geo_settled_minutes.map(lambda v: fmt(v, 1)),
                                                    "Unsettled": gr.unsettled.map(lambda v: fmt(v, 1))}),
-      title="Routes with the most unsettled minutes (real rows)", fs=9)
+      title="Routes with the most unsettled minutes (route days with a T8 row)", fs=9)
 save(fig, 12, "route_cell_maps")
 print("font", FONT, "commit", COMMIT, "run", RUN)
