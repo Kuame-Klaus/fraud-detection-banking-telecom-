@@ -11,7 +11,7 @@ import pyarrow.parquet as pq
 STR = ["record_type", "run_id", "created_at", "stack", "domain", "dataset_id", "scenario", "model", "rule_id", "split",
        "record_id", "entity_id", "entity_type", "event_timestamp", "month", "true_scenario", "currency", "metric",
        "sample_method", "check_name", "expected", "observed", "note", "score_band", "compare_stack", "source_id",
-       "target_id", "route", "cell_id", "stage"]
+       "target_id", "route", "cell_id", "stage", "feature"]
 INT = ["predicted_label", "true_label", "train_rows", "step", "alert_count", "detected_count", "edge_count",
        "first_digit", "observed_count"]
 BOOL = ["passed", "covered"]
@@ -21,7 +21,8 @@ COLUMNS = ["record_type", "run_id", "created_at", "stack", "domain", "dataset_id
            "step", "check_name", "expected", "observed", "passed", "note", "covered", "threshold_change_pct", "alert_count",
            "detected_count", "score_band", "band_share", "compare_stack", "source_id", "target_id", "edge_weight", "edge_count",
            "first_digit", "observed_count", "expected_share", "route", "cell_id", "latitude", "longitude", "geo_minutes",
-           "geo_settled_minutes", "runtime_seconds", "peak_memory_mb", "stage"]
+           "geo_settled_minutes", "runtime_seconds", "peak_memory_mb", "stage", "feature", "coefficient", "odds_ratio",
+           "curve_precision", "curve_recall"]
 SCHEMA = pa.schema([(c, pa.string() if c in STR else pa.int64() if c in INT else pa.bool_() if c in BOOL else pa.float64())
                     for c in COLUMNS])
 

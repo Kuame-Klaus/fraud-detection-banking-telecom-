@@ -23,6 +23,7 @@ import pandas as pd
 import yaml
 
 from . import dq, features, load, model, rules
+from . import geo as geo_sites
 from .output import ResultsWriter
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -90,6 +91,8 @@ def main(argv=None):
     ap.add_argument("--max-train-rows", type=int, default=2_000_000, help="stratified sample cap for XGBoost training")
     ap.add_argument("--csv-scores", choices=["auto", "yes", "no"], default="auto",
                     help="write score rows to the CSV too (auto: only when the run is small)")
+    ap.add_argument("--model", choices=["logreg", "xgboost"], default="logreg",
+                    help="logreg (logistic regression, the default) or xgboost (kept as an option)")
     ap.add_argument("--rules", choices=["default", "v1"], default="default",
                     help="v1 runs the old R_B06, R_B09, R_B16 and R_T01 (config/rule_versions.yaml) for comparison")
     a = ap.parse_args(argv)
@@ -108,7 +111,7 @@ def main(argv=None):
     small = {}
     buckets = {}
     benford = {k: np.zeros(10, dtype=np.int64) for k in ("B1", "B7", "T4")}
-    agent_day, route_min, geo1 = [], [], []
+    agent_day, route_min, geo1, cell_min = [], [], [], []
     total_rows = 0
     for name, (domain, _) in src.datasets.items():
         q = dq.DQ(name.split("_")[0], name, domain, load.AMOUNT_COLS.get(name), src.expected_rows(name))
@@ -129,6 +132,7 @@ def main(argv=None):
                 agent_day.append(chunk.groupby([chunk["agent_id"], chunk["timestamp"].dt.floor("D").rename("day")]).size())
             elif name == "T1_cdrs":
                 route_min.append(chunk.groupby("route")["duration_sec"].sum() / 60)
+                cell_min.append(chunk.groupby("cell_id")["duration_sec"].sum() / 60)
                 geo1.append(chunk.groupby([chunk["route"], chunk["start_time"].dt.strftime("%Y-%m-%d").rename("day")])["duration_sec"].sum() / 60)
             del chunk
         for r in q.finish():
@@ -138,7 +142,8 @@ def main(argv=None):
     agent_day_s = pd.concat(agent_day).groupby(level=[0, 1]).sum()
     route_min_s = pd.concat(route_min).groupby(level=0).sum()
     geo1_s = pd.concat(geo1).groupby(level=[0, 1]).sum()
-    del agent_day, route_min, geo1
+    cell_min_s = pd.concat(cell_min).groupby(level=0).sum() if cell_min else pd.Series(dtype=float)
+    del agent_day, route_min, geo1, cell_min
     st["load"] = time.time() - t  # load, control totals and DQ share one streaming pass
     st["data_quality"] = 0.0
 
@@ -216,16 +221,17 @@ def main(argv=None):
     st["features"] = t_feat
     st["rules"] = time.time() - t - t_feat
 
-    # Step 5: XGBoost per domain: train on a recorded stratified sample, score every row
+    # Step 5: model per domain (logistic regression by default, XGBoost with --model xgboost): train on a recorded stratified sample, score every row
     t = time.time()
     summary_model = []
+    mname = "logistic_regression" if a.model == "logreg" else "xgboost"; drivers = {}
     for domain, tb, feats, ent, etype in (("banking", "B1", features.BANK_FEATURES, "account_id", "account"),
                                           ("telecom", "T4", features.TEL_FEATURES, "wallet_id", "wallet")):
         mt = time.time(); mi = model_in[tb]
         Xtr = pd.concat([x for x, _ in mi["train"]], ignore_index=True); ytr = np.concatenate([y for _, y in mi["train"]])
         Xva = pd.concat([x for x, _ in mi["validation"]], ignore_index=True); yva = np.concatenate([y for _, y in mi["validation"]])
         mi["train"] = mi["validation"] = None
-        clf = model.fit(Xtr, ytr, Xva, yva, seed=cfg["seed"])
+        clf = model.fit_model(mname, Xtr, ytr, Xva, yva, seed=cfg["seed"])
         ntr = len(ytr); method = "none" if frac[tb] >= 1 else "stratified"
         del Xtr, Xva
         scores, ys, sps, labs = [], [], [], []
@@ -243,21 +249,31 @@ def main(argv=None):
             m["alerts"] = int(pred[sp == s_name].sum())
             m["detected"] = int((pred[sp == s_name] == 1)[y[sp == s_name] == 1].sum())  # true positives, so recall = detected / positives
             for k, v in m.items():
-                W.add({"record_type": "metric", "domain": domain, "model": "xgboost", "scenario": "all", "split": s_name,
+                W.add({"record_type": "metric", "domain": domain, "model": mname, "scenario": "all", "split": s_name,
                        "metric": k, "value": float(v), "alert_rate": m["alert_rate"], "train_rows": ntr,
                        "sample_method": method, "dataset_id": tb,
                        "note": f"negative sample fraction {frac[tb]:.6f}; all positives kept; scored all rows"})
         test = sp == "test"
+        if test.any() and 0 < y[test].sum() < test.sum():
+            c = model.pr_curve(y[test], score[test])
+            W.write(pd.DataFrame({"record_type": "pr_curve", "domain": domain, "model": mname, "scenario": "all", "split": "test",
+                                  "dataset_id": tb, "step": np.arange(len(c)), "threshold": c["threshold"],
+                                  "curve_precision": c["precision"], "curve_recall": c["recall"]}))
+        if mname == "logistic_regression":
+            co = clf.coefficients(); drivers[domain] = co
+            W.write(pd.DataFrame({"record_type": "coefficient", "domain": domain, "model": mname, "dataset_id": tb,
+                                  "step": np.arange(len(co)), "feature": co["feature"], "coefficient": co["coefficient"],
+                                  "odds_ratio": co["odds_ratio"], "note": "per 1 standard deviation of the signed log feature"}))
         for scen in sorted(set(lab[lab != ""])):
             mk = test & (lab == scen)
             if mk.sum():
-                W.add({"record_type": "metric", "domain": domain, "model": "xgboost", "scenario": scen, "split": "test",
+                W.add({"record_type": "metric", "domain": domain, "model": mname, "scenario": scen, "split": "test",
                        "metric": "recall", "value": float(pred[mk].mean()), "dataset_id": tb})
-                W.add({"record_type": "metric", "domain": domain, "model": "xgboost", "scenario": scen, "split": "test",
+                W.add({"record_type": "metric", "domain": domain, "model": mname, "scenario": scen, "split": "test",
                        "metric": "detected", "value": float(pred[mk].sum()), "dataset_id": tb})
         for pct in (-20, -10, 0, 10, 20):
             th = thr * (1 + pct / 100); p = score[test] >= th
-            W.add({"record_type": "threshold", "domain": domain, "model": "xgboost", "scenario": "all",
+            W.add({"record_type": "threshold", "domain": domain, "model": mname, "scenario": "all",
                    "threshold_change_pct": float(pct), "threshold": float(th), "alert_count": int(p.sum()),
                    "detected_count": int((p & (y[test] == 1)).sum())})
         # score rows for the test split, and drift over all months, one bucket file at a time
@@ -268,7 +284,7 @@ def main(argv=None):
             band = pd.cut(sc, BANDS, include_lowest=True, labels=BAND_LABELS)
             ct = pd.crosstab(mon, band); drift = ct if drift is None else drift.add(ct, fill_value=0)
             m = s_sp == "test"; dd = d.loc[m]
-            W.write(pd.DataFrame({"record_type": "score", "domain": domain, "dataset_id": tb, "model": "xgboost", "scenario": "all",
+            W.write(pd.DataFrame({"record_type": "score", "domain": domain, "dataset_id": tb, "model": mname, "scenario": "all",
                                   "split": "test", "record_id": dd["txn_id"].to_numpy(), "entity_id": dd[ent].to_numpy(), "entity_type": etype,
                                   "event_timestamp": dd["timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%SZ").to_numpy(),
                                   "month": mon[m], "score": sc[m], "threshold": thr, "predicted_label": s_pred[m],
@@ -277,8 +293,8 @@ def main(argv=None):
         drift = drift.div(drift.sum(axis=1), axis=0)
         for mo, r in drift.iterrows():
             for b, v in r.items():
-                W.add({"record_type": "drift", "domain": domain, "model": "xgboost", "month": mo, "score_band": str(b), "band_share": float(v)})
-        W.add({"record_type": "metric", "domain": domain, "model": "xgboost", "metric": "train_seconds", "value": time.time() - mt,
+                W.add({"record_type": "drift", "domain": domain, "model": mname, "month": mo, "score_band": str(b), "band_share": float(v)})
+        W.add({"record_type": "metric", "domain": domain, "model": mname, "metric": "train_seconds", "value": time.time() - mt,
                "runtime_seconds": time.time() - mt, "train_rows": ntr, "sample_method": method, "dataset_id": tb})
         del score, y, sp, lab, pred, scores
     st["model"] = time.time() - t
@@ -306,7 +322,13 @@ def main(argv=None):
     geo = pd.concat([geo1_s.rename("geo_minutes"), g8.rename("geo_settled_minutes")], axis=1).reset_index()
     W.write(pd.DataFrame({"record_type": "geo", "domain": "telecom", "dataset_id": "T1", "route": geo["route"],
                           "month": geo["day"], "geo_minutes": geo["geo_minutes"], "geo_settled_minutes": geo["geo_settled_minutes"],
-                          "note": "latitude and longitude not available, see docs/open_questions.md"}))
+                          "note": "route day rows; cell site rows below carry SYNTHETIC latitude and longitude"}))
+    if len(cell_min_s):
+        cs = geo_sites.cell_sites(cell_min_s.index, seed=cfg["seed"]).set_index("cell_id")
+        W.write(pd.DataFrame({"record_type": "geo", "domain": "telecom", "dataset_id": "T1", "cell_id": cs.index,
+                              "latitude": cs["latitude"].to_numpy(), "longitude": cs["longitude"].to_numpy(),
+                              "geo_minutes": cell_min_s.reindex(cs.index).to_numpy(),
+                              "note": ("SYNTHETIC cell site location near " + cs["town"] + ", not a real site").to_numpy()}))
     shutil.rmtree(tmp)
     st["output"] = time.time() - t
     for s_name, s in st.items():
@@ -316,6 +338,8 @@ def main(argv=None):
            "note": f"input rows {total_rows}"})
     csv_full = a.csv_scores == "yes" or (a.csv_scores == "auto" and total_rows <= 2_000_000)
     path = W.close(csv_full=csv_full)
+    if drivers:
+        (out / "model_drivers.md").write_text(model.drivers_markdown(drivers, run_id))
     print(f"results: {path}")
     for s_name, s in st.items():
         print(f"{s_name}\t{s:.1f}s")

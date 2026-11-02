@@ -23,8 +23,8 @@ def _save(fig, out, name):
 
 
 def kpi_overview(d, out):
-    s = d[(d.record_type == "score") & (d.model == "xgboost")]
-    m = d[(d.record_type == "metric") & (d.model == "xgboost") & (d.split == "test") & (d.scenario == "all")]
+    s = d[(d.record_type == "score") & d.model.isin(["logistic_regression", "xgboost"])]
+    m = d[(d.record_type == "metric") & d.model.isin(["logistic_regression", "xgboost"]) & (d.split == "test") & (d.scenario == "all")]
     fig, ax = plt.subplots(figsize=(9, 3)); ax.axis("off")
     rows = []
     for dom in ("banking", "telecom"):
@@ -33,7 +33,7 @@ def kpi_overview(d, out):
                      f"{mm.get('pr_auc', np.nan):.3f}", f"{mm.get('precision', np.nan):.3f}", f"{mm.get('recall', np.nan):.3f}",
                      f"{ss.loc[(ss.predicted_label == 1) & (ss.true_label == 1), 'amount'].sum():,.0f}"])
     t = ax.table(cellText=rows, colLabels=["domain", "test rows", "alerts", "planted", "PR AUC", "precision", "recall", "amount caught"], loc="center")
-    t.scale(1, 1.6); ax.set_title("KPI overview, XGBoost test split")
+    t.scale(1, 1.6); ax.set_title("KPI overview, model test split")
     return _save(fig, out, "01_kpi_overview.png")
 
 
@@ -51,7 +51,7 @@ def detection_heatmap(d, out):
 
 
 def pr_and_confusion(d, out):
-    s = d[(d.record_type == "score") & (d.model == "xgboost")]
+    s = d[(d.record_type == "score") & d.model.isin(["logistic_regression", "xgboost"])]
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     for dom in ("banking", "telecom"):
         x = s[s.domain == dom]
@@ -126,7 +126,7 @@ def leaderboards(d, out):
         x = s[s.domain == dom]
         g = x.groupby(["entity_type", "entity_id"]).agg(alerts=("score", "size"), amount=("amount", "sum"),
                                                         planted=("true_label", "max")).reset_index()
-        ms = d[(d.record_type == "score") & (d.model == "xgboost") & (d.domain == dom)].groupby("entity_id")["score"].max()
+        ms = d[(d.record_type == "score") & d.model.isin(["logistic_regression", "xgboost"]) & (d.domain == dom)].groupby("entity_id")["score"].max()
         g["max_score"] = g.entity_id.map(ms).fillna(0)
         g = g[g.entity_type.isin(["account", "wallet"])].sort_values(["alerts", "amount"], ascending=False).head(15)[::-1]
         colors = ["#d62728" if p == 1 else "#1f77b4" for p in g.planted]
@@ -168,11 +168,11 @@ def threshold_slider(d, out):
         x = t[t.domain == dom].sort_values("threshold_change_pct")
         ax.plot(x.threshold_change_pct, x.alert_count, "o-", label="alerts")
         ax.plot(x.threshold_change_pct, x.detected_count, "s-", label="planted cases detected")
-        ax.set_xlabel("threshold change (percent)"); ax.set_title(f"Threshold sensitivity, {dom} XGBoost test split"); ax.legend()
+        ax.set_xlabel("threshold change (percent)"); ax.set_title(f"Threshold sensitivity, {dom} model test split"); ax.legend()
     p = _save(fig, out, "09_threshold_sensitivity.png")
     # interactive page: alerts and detections for any threshold, from the scored test rows
     import json
-    s = d[(d.record_type == "score") & (d.model == "xgboost")]
+    s = d[(d.record_type == "score") & d.model.isin(["logistic_regression", "xgboost"])]
     data = {}
     grid = np.round(np.linspace(0, 1, 201), 3)
     for dom in ("banking", "telecom"):
@@ -183,7 +183,7 @@ def threshold_slider(d, out):
                      "current": float(x.threshold.iloc[0]) if len(x) else 0.5}
     html = """<!doctype html><html><head><meta charset="utf-8"><title>Threshold slider (SYNTHETIC data, Klaus Konsults)</title>
 <style>body{font-family:sans-serif;margin:2em}td{padding:4px 10px}</style></head><body>
-<h2>Threshold slider, XGBoost test split</h2><p>SYNTHETIC data, Klaus Konsults. Move the slider to see alerts and planted cases detected.</p>
+<h2>Threshold slider, model test split</h2><p>SYNTHETIC data, Klaus Konsults. Move the slider to see alerts and planted cases detected.</p>
 <div id="ui"></div><script>
 const D = DATA;
 const ui = document.getElementById('ui');

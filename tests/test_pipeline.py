@@ -129,7 +129,7 @@ def test_insider_and_imei_rules_catch_plants(data):
 def test_model_detected_matches_recall(data, tmp_path):
     out, _ = data
     d = pd.read_parquet(run.main(["--data", str(out), "--out", str(tmp_path / "o"), "--run-id", "det"]))
-    m = d[(d.record_type == "metric") & (d.model == "xgboost") & (d.scenario == "all")]
+    m = d[(d.record_type == "metric") & (d.model == "logistic_regression") & (d.scenario == "all")]
     for (dom, sp), g in m.groupby(["domain", "split"]):
         v = g.set_index("metric")["value"]
         if "recall" in v:
@@ -178,3 +178,61 @@ def test_benford_account_month_flags_planted_cluster():
     d = pd.concat([d, plant], ignore_index=True)
     f = rules.benford_account_month(d)
     assert f[d.account_id == "X"].all() and f[d.account_id != "X"].sum() == 0
+
+
+def test_prior_swap_hours_matches_merge_asof():
+    from python.pipeline import features
+    rng = np.random.default_rng(1)
+    n, k = 5000, 400
+    ms = pd.Series(rng.integers(0, 300, n).astype(str)); ms[rng.random(n) < 0.05] = None
+    ts = pd.Series(pd.Timestamp("2025-01-01") + pd.to_timedelta(rng.integers(0, 365 * 86400, n), unit="s")).astype("datetime64[us]")
+    sw = pd.DataFrame({"msisdn": rng.integers(0, 250, k).astype(str),
+                       "swap_time": pd.Timestamp("2025-01-01") + pd.to_timedelta(rng.integers(0, 365 * 86400, k), unit="s")})
+    sw.loc[:5, "swap_time"] = ts[:6].to_numpy()  # ties: a swap at the same second counts as at or before
+    sw.loc[:5, "msisdn"] = ms[:6].fillna("0").to_numpy()
+    x = pd.DataFrame({"msisdn": ms, "timestamp": ts, "_i": np.arange(n)}).dropna(subset=["msisdn"]).sort_values("timestamp")
+    s2 = sw.sort_values("swap_time").assign(swap_time=lambda z: z["swap_time"].astype(ts.dtype))
+    j = pd.merge_asof(x, s2, left_on="timestamp", right_on="swap_time", by="msisdn", direction="backward")
+    ref = np.full(n, 1e5); ref[j["_i"].to_numpy()] = ((j["timestamp"] - j["swap_time"]).dt.total_seconds() / 3600).fillna(1e5).to_numpy()
+    assert np.array_equal(np.clip(ref, None, 1e5), features.prior_swap_hours(ms, ts, sw))
+
+
+def test_benford_fast_matches_crosstab_reference():
+    from scipy.stats import chi2
+    from python.pipeline import rules
+    rng = np.random.default_rng(2)
+    n = 6000
+    amt = np.where(rng.random(n) < 0.3, rng.uniform(700, 900, n), np.exp(rng.uniform(np.log(0.5), np.log(1e5), n)))
+    d = pd.DataFrame({"account_id": rng.integers(0, 60, n).astype(str), "amount": amt,
+                      "timestamp": pd.Timestamp("2025-01-01") + pd.to_timedelta(rng.integers(0, 365 * 86400, n), unit="s")})
+    c = rules.P["R_B16"]; a = d["amount"].to_numpy(); ld = np.zeros(n, int); ok = a >= 1
+    ld[ok] = (a[ok] / 10 ** np.floor(np.log10(a[ok]))).astype(int)
+    key = d["account_id"] + "|" + d["timestamp"].dt.strftime("%Y-%m")
+    ct = pd.crosstab(key, ld).reindex(columns=range(1, 10), fill_value=0); nn = ct.sum(axis=1)
+    share = ct.div(nn.where(nn > 0, 1), axis=0); bp = rules.BENFORD_P
+    p = chi2.sf((((ct - np.outer(nn, bp)) ** 2) / np.outer(nn, bp).clip(1e-12)).sum(axis=1), 8)
+    fail = (nn >= c["min_rows"]) & ((share - bp).abs().mean(axis=1) >= c["min_mad"]) & (p <= c["max_p_value"])
+    over = (share - bp) > c["over_share"]
+    ref = np.array([bool(fail[k]) and x >= 1 and bool(over.loc[k, x]) for k, x in zip(key, ld)])
+    got = rules.benford_account_month(d).to_numpy()
+    assert ref.sum() > 0 and np.array_equal(ref, got)
+
+
+def test_logreg_default_curves_coefficients_and_geo(data, tmp_path):
+    out, _ = data
+    d = pd.read_parquet(run.main(["--data", str(out), "--out", str(tmp_path / "lr"), "--run-id", "lr"]))
+    assert set(d.loc[d.record_type == "metric", "model"].dropna()) == {"rule", "logistic_regression"}
+    pc = d[d.record_type == "pr_curve"]
+    assert set(pc.domain) == {"banking", "telecom"} and pc.curve_precision.between(0, 1).all() and pc.curve_recall.between(0, 1).all()
+    co = d[d.record_type == "coefficient"]
+    assert co.feature.notna().all() and set(co.domain) == {"banking", "telecom"}
+    assert (tmp_path / "lr" / "model_drivers.md").read_text().count("| 1 |") == 2
+    g = d[(d.record_type == "geo") & d.cell_id.notna()]
+    assert len(g) and g.latitude.between(4.5, 11.2).all() and g.longitude.between(-3.3, 1.2).all()
+    assert g.note.str.contains("SYNTHETIC").all()
+
+
+def test_xgboost_still_available(data, tmp_path):
+    out, _ = data
+    d = pd.read_parquet(run.main(["--data", str(out), "--out", str(tmp_path / "xg"), "--run-id", "xg", "--model", "xgboost"]))
+    assert "xgboost" in set(d.loc[d.record_type == "metric", "model"]) and (d.record_type == "pr_curve").any()
