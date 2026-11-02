@@ -59,7 +59,7 @@ Each stack runs the same six stages (docs/pipeline_steps.md):
 2. Data quality checks.
 3. Features.
 4. Scenario rules.
-5. Model: XGBoost in Python, built in learners in Alteryx and KNIME.
+5. Model: logistic regression per domain by default (top drivers in plain English in model_drivers.md next to the results), the same learner in Alteryx and KNIME. XGBoost stays in Python as an option: `python -m python.pipeline.run --model xgboost`.
 6. Shared results output, with detection review checks: rule coverage gaps, threshold sensitivity at plus or minus 10% and 20%, monthly score drift, and agreement between the three tools.
 
 All stacks write one shared results file format (docs/output_schema.md). The same 12 charts (docs/charts.md) are built in Python from those files, and planned for Power BI.

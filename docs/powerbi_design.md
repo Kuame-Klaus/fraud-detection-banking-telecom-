@@ -46,7 +46,9 @@ let
         {"value", type number}, {"threshold_change_pct", type number},
         {"alert_count", Int64.Type}, {"detected_count", Int64.Type},
         {"first_digit", Int64.Type}, {"observed_count", Int64.Type}, {"expected_share", type number},
-        {"latitude", type number}, {"longitude", type number},
+        {"latitude", type number}, {"longitude", type number}, {"cell_id", type text},
+        {"feature", type text}, {"coefficient", type number}, {"odds_ratio", type number},
+        {"curve_precision", type number}, {"curve_recall", type number}, {"step", Int64.Type},
         {"runtime_seconds", type number}, {"peak_memory_mb", type number}
     }, "en-US")
 in
@@ -81,6 +83,8 @@ erDiagram
     DimDataset ||--o{ FactBenford : dataset_id
     DimDataset ||--o{ FactGeo : dataset_id
     DimStack ||--o{ FactRun : stack
+    DimDomain ||--o{ FactPRCurve : domain
+    DimDomain ||--o{ FactCoefficient : domain
 ```
 
 | Table | Source filter | Grain |
@@ -94,8 +98,10 @@ erDiagram
 | FactAgreement | agreement | one pair of tools per model and scenario |
 | FactEdge | edge | one network link |
 | FactBenford | benford | one first digit per dataset |
-| FactGeo | geo | one route or cell per day |
+| FactGeo | geo | one route per day, or one cell site (cell_id with SYNTHETIC latitude and longitude) |
 | FactRun | run | one run stage |
+| FactPRCurve | pr_curve | one curve point per model, domain and split (up to 101 points) |
+| FactCoefficient | coefficient | one logistic regression feature per domain |
 | DimStack | distinct stack | alteryx, knime, python |
 | DimDomain | distinct domain | banking, telecom |
 | DimScenario | the 27 scenarios in docs/scenario_coverage.md, with domain and a pack or extension flag | one scenario |
@@ -217,16 +223,16 @@ All pages are 16 by 9. Layout uses a top band (title, one line note, slicer bar)
 |---|---|---|---|
 | 1 | KPI overview | four cards in a row, then a table below | cards: Records Scored, Alerts, Recall, Precision; table by stack with Alert Rate, Alerted Amount, Detected Amount, PR AUC |
 | 2 | Detection heat map by scenario and tool | full width matrix | rows scenario, columns stack, values Recall with colour scale; tooltip Precision and Alerts |
-| 3 | PR curves and confusion matrices | left two thirds line chart, right third three small matrices | line: precision against recall per stack (needs curve points, see open points); matrix per stack of TP, FP, FN, TN |
+| 3 | PR curves and confusion matrices | left two thirds line chart, right third three small matrices | line: curve_precision against curve_recall from FactPRCurve per stack and domain (record_type pr_curve); matrix per stack of TP, FP, FN, TN |
 | 4 | Alert trends | line chart on top, stacked column below | line: Alerts by DimDate per stack; columns: Alerts by month and scenario |
 | 5 | Risk leaderboards | two tables side by side | top 20 entity_id by max score and by Alerted Amount, with entity_type and scenario |
-| 6 | Mule and agent network graphs | network visual on the left, edge table on the right | a network custom visual (for example Force Directed Graph from AppSource) on source_id, target_id, Edge Weight; filter on entity_type |
+| 6 | Mule and agent network graphs | network visual on the left, edge table on the right | the custom network chart specified in "Custom network chart spec" below, on source_id, target_id, Edge Weight; filter on entity_type |
 | 7 | Hour by weekday heat maps | one matrix, full width | rows Weekday, columns HourOfDay, values Alerts with colour scale |
 | 8 | Benford chart | clustered column with line, dataset slicer on the side | columns Benford Observed Share by first_digit, line Benford Expected Share, card Benford Gap |
 | 9 | Threshold slider | slider at the top, two cards, then a line chart | slider Threshold change; cards Alerts At Threshold, Detected At Threshold; line of alert_count against threshold_change_pct per rule or model |
 | 10 | DQ and reconciliation | cards on top, table below | cards DQ Checks, DQ Failed, DQ Pass Rate; table step, dataset_id, month, check_name, expected, observed, passed, note with red for failed |
 | 11 | Tool runtime and memory | two bar charts side by side, table below | Runtime Seconds by stage and stack, Peak Memory MB by stack; table with train_rows |
-| 12 | Telecom route and cell maps | map on the left, route table on the right | Azure Maps or Map visual on latitude and longitude sized by Route Minutes; table route with Route Minutes, Settled Minutes, Unsettled Minutes. Domain is fixed to telecom |
+| 12 | Telecom route and cell maps | map on the left, route table on the right | Azure Maps or Map visual on the cell site rows of FactGeo (cell_id not blank), latitude and longitude sized by geo_minutes, with a visible label "SYNTHETIC cell site locations, not real sites"; table route with Route Minutes, Settled Minutes, Unsettled Minutes. Domain is fixed to telecom |
 
 Coverage, drift and agreement (steps 17, 19 and 20) appear as tooltips and a small table on pages 2 and 9, using Uncovered Scenarios, Drift Value and Agreement Rate.
 
@@ -236,11 +242,38 @@ On the Power BI Service, the data source is set to Anonymous with privacy level 
 
 ## Open design points
 
-1. Page 3 needs precision and recall curve points. Either the pipeline adds a curve record_type to docs/output_schema.md, or Power BI computes points from FactScore at fixed thresholds. Not decided.
-2. Cell latitude and longitude are an open question in docs/open_questions.md, so page 12 may only show the route table at first.
-3. The full results file path and whether it needs splitting into parts.
-4. The network visual is a custom visual and needs approval to use.
+Round 7 (approved by Klaus Konsults) closed three points:
+1. Page 3 curve points: done. The pipeline writes record_type pr_curve (curve_precision, curve_recall, threshold, step) per model, domain and test split.
+2. Cell latitude and longitude: done with SYNTHETIC locations. Each cell_id gets a made up point near a real Ghana town (python/pipeline/geo.py, seeded). They are not real cell sites and must be replaced with the client's site list.
+3. Network visual: specified below. Approval to install a custom visual on the client tenant is still needed.
 
+Still open: the full results file is split into parts with a manifest (outputs/full/results_parts); the Power Query to combine the parts is not written yet.
+
+## Custom network chart spec
+
+Purpose. Page 6 shows who sends money to whom (banking mule network, B1) and which wallets an agent serves on busy days (telecom, T4), so an investigator can see rings and hubs.
+
+Data. FactEdge only: source_id, target_id, entity_type (account or agent), edge_weight (total amount on the link), edge_count (number of transactions), domain. Nodes are the distinct source_id and target_id values. A node is "flagged" when it appears as entity_id on an alerted FactScore row (predicted_label = 1) in the current filter context.
+
+Visual. A custom visual built with the Power BI visuals SDK (pbiviz, TypeScript, d3 force layout), or an approved AppSource network visual that supports the same field wells. Field wells: Source (text), Target (text), Weight (number), Count (number, tooltip), Node flag (number, 0 or 1), Domain (text, for the legend).
+
+Layout and marks.
+1. Force directed layout, seeded so the same data draws the same picture. Link distance shorter for heavier links.
+2. Node size by total weight in and out (square root scale, 4 to 24 pixels). Node colour: flagged nodes in the accent colour, others in grey. Shape: circle for accounts and wallets, square for agents.
+3. Link width by edge_weight (1 to 8 pixels, square root scale), arrow from source to target, opacity 0.6.
+4. Labels only on the 15 heaviest nodes, to keep the chart readable.
+
+Interaction.
+1. Selecting a node cross filters the other visuals on the page to that entity (selection manager), and highlights its first neighbours.
+2. Tooltip on a node: id, entity type, total in, total out, links, flagged or not. On a link: source, target, amount, count.
+3. A Top N links parameter (default 500) caps the drawing, since full data has far more links than a browser can lay out. The table on the right always shows all links in the filter.
+4. Respects the Domain slicer, so banking and telecom never mix.
+
+Performance and limits. Power BI sends at most 30,000 rows to a custom visual by default; the Top N cap keeps it well under that. Layout runs at most 300 ticks and then freezes.
+
+Accessibility and theme. Uses the Klaus Konsults theme colours; flagged status is shown by shape outline as well as colour; a keyboard focus order follows node weight.
+
+Testing. Check on the sample results that node and link counts in the visual match a DAX count of FactEdge in the same filter, and that a planted mule_network account shows as flagged.
 
 ## Page mockups
 

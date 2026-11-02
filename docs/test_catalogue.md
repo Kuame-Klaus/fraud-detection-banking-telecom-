@@ -9,8 +9,8 @@ No results are quoted here. Measured figures live only in the shared results fil
 ## How every test works
 
 1. **Rules.** Each test has a transparent rule in python/pipeline/rules.py with an id such as R_B01. Every threshold in rules.py is an ASSUMPTION default, not a client parameter. On real work each one is set from the client's own limits (B14, T12) or calibrated on their data.
-2. **Model.** One XGBoost model per domain, trained on the event table only: B1 for banking and T4 for telecom. It learns from every planted scenario at once (label is 1 when synthetic_scenario is not empty). Training uses a fixed time split: before 1 October 2025 is train, October 2025 is validation, later is test. The alert threshold is set on validation so that 1% of records alert (an ASSUMPTION alert budget). Model features are listed in features.py (BANK_FEATURES and TEL_FEATURES).
-3. **Combining.** The code does not merge rule and model scores into one number. Rules write score rows with model = rule and score = 1.0 for each hit. The model writes its own score rows with model = xgboost, for the test split only. A reviewer sees both and can compare them. A combined score is not built yet.
+2. **Model.** One logistic regression model per domain (the default from round 7, approved by Klaus Konsults; XGBoost is kept as an option with --model xgboost), trained on the event table only: B1 for banking and T4 for telecom. It learns from every planted scenario at once (label is 1 when synthetic_scenario is not empty). Training uses a fixed time split: before 1 October 2025 is train, October 2025 is validation, later is test. The alert threshold is set on validation so that 1% of records alert (an ASSUMPTION alert budget). Model features are listed in features.py (BANK_FEATURES and TEL_FEATURES).
+3. **Combining.** The code does not merge rule and model scores into one number. Rules write score rows with model = rule and score = 1.0 for each hit. The model writes its own score rows with model = logistic_regression (or xgboost), for the test split only, plus pr_curve rows (precision and recall curve points on the test split) and, for logistic regression, coefficient rows and a plain English model_drivers.md. A reviewer sees both and can compare them. A combined score is not built yet.
 4. **Outputs.** For each rule, run.py writes metric rows (planted_rows, alerts, recall, precision) with record_type metric, domain, model = rule, rule_id, scenario, dataset_id, split = all. Model results are metric, score, threshold and drift rows. Tests on tables other than B1 and T4 are covered only by their rule.
 5. **Planted cases.** The generator plants labelled cases for each scenario into the right tables, writing the scenario name into synthetic_scenario. About 0.05% of event rows per scenario are planted (PLANT_SHARE, an ASSUMPTION). Recall and precision per rule are measured against these labels. Because the plants were designed alongside the rules, good scores on synthetic data show the pipeline works end to end; they do not show how the test performs on real fraud.
 
@@ -364,7 +364,7 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 ### 29. Threshold sensitivity
 
 * **What it checks.** How alerts and detection change if the threshold moves by minus 20%, minus 10%, 0, plus 10% and plus 20%.
-* **How.** Run for the XGBoost model in each domain, around its validation based threshold.
+* **How.** Run for the model (logistic regression by default) in each domain, around its validation based threshold.
 * **Outputs.** threshold rows with threshold_change_pct, threshold, alert_count and detected_count.
 * **Differs from plan.** Rules are not swept yet; their thresholds stay fixed.
 * **Limits.** Only five fixed points, so it shows direction, not the best threshold.
@@ -382,4 +382,4 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 * **What it checks.** Whether Alteryx, KNIME and Python flag the same records, using the shared record_id.
 * **Outputs.** Planned as agreement rows with stack, compare_stack, scenario and value.
 * **Differs from plan.** **Not built.** No code writes agreement rows yet, because the Alteryx and KNIME flows do not exist yet (see docs/alteryx_knime_design.md).
-* **Limits.** The models differ by design (XGBoost against built in learners), so some disagreement is expected; rules should agree exactly.
+* **Limits.** All stacks fit logistic regression, but solvers differ, so small model disagreement is expected; rules should agree exactly.

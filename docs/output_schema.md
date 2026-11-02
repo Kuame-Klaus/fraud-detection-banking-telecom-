@@ -13,8 +13,10 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 7. agreement: one row per pair of tools per model and scenario.
 8. edge: one row per link in the mule or agent network.
 9. benford: one row per first digit per dataset.
-10. geo: one row per route or cell per day.
+10. geo: one row per route per day, and one row per cell site with SYNTHETIC latitude and longitude (cell_id set, note says SYNTHETIC).
 11. run: one row per run with runtime and memory.
+12. pr_curve: one row per curve point per model, domain and split (up to 101 points on the test split). Columns step, threshold, curve_precision, curve_recall.
+13. coefficient: one row per logistic regression feature per domain. Columns step (rank by absolute size), feature, coefficient (per 1 standard deviation of the signed log feature), odds_ratio. A plain English list of the top drivers is written to model_drivers.md next to the results.
 
 ## Columns
 
@@ -69,10 +71,15 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 | expected_share | float | benford | Benford expected share for that digit |
 | route | string | geo | T1 or T8 route |
 | cell_id | string | geo | T1 or T9 cell id |
-| latitude | float | geo | cell latitude (open question, see docs/open_questions.md) |
-| longitude | float | geo | cell longitude (open question) |
+| latitude | float | geo | SYNTHETIC cell site latitude (python/pipeline/geo.py), not a real site |
+| longitude | float | geo | SYNTHETIC cell site longitude, not a real site |
 | geo_minutes | float | geo | minutes on the route or cell that day |
 | geo_settled_minutes | float | geo | settled minutes from T8, if any |
 | runtime_seconds | float | run, metric | measured runtime |
 | peak_memory_mb | float | run, metric | measured peak memory, if available |
 | stage | string | run | stage name from docs/pipeline_steps.md |
+| feature | string | coefficient | model feature name |
+| coefficient | float | coefficient | logistic regression coefficient per 1 standard deviation |
+| odds_ratio | float | coefficient | exp(coefficient) |
+| curve_precision | float | pr_curve | precision at the curve point |
+| curve_recall | float | pr_curve | recall at the curve point |

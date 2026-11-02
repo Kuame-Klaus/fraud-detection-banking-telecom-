@@ -6,7 +6,7 @@
 2. Data quality checks (steps 5 to 12).
 3. Features (step 13).
 4. Scenario rules (step 14).
-5. Model: XGBoost in Python, built in learners in Alteryx and KNIME (steps 15 to 16).
+5. Model: logistic regression in Python (default, XGBoost as an option), and the logistic regression learners in Alteryx and KNIME (steps 15 to 16).
 6. Shared results output, including the detection review checks (steps 17 to 22).
 
 ## Steps
@@ -28,7 +28,7 @@ Every stack (Alteryx, KNIME, Python) runs the same six stages and the numbered s
 13. Feature preparation, within banking or within telecom only.
 14. Scenario rules for all 27 scenarios in docs/scenario_coverage.md, including the Klaus Konsults extensions.
 15. Fixed time based splits, identical across stacks.
-16. Train, score and evaluate the model: XGBoost in Python, and the built in learners in Alteryx and KNIME (for example their gradient boosted trees).
+16. Train, score and evaluate the model: logistic regression in Python by default (XGBoost with --model xgboost), and the logistic regression learners in Alteryx and KNIME. Write precision and recall curve points (record_type pr_curve) and coefficient rows.
 17. Rule coverage gaps: list scenarios with no rule or model firing, and rules that map to no scenario.
 18. Threshold sensitivity: rerun each rule and model threshold at minus 20%, minus 10%, plus 10% and plus 20% of its base value, and record alert counts and detection for each.
 19. Monthly score drift: compare the score distribution of each month with the training period.
