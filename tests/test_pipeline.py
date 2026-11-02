@@ -146,3 +146,35 @@ def test_leakage_rule_route_day(data):
     y = g["synthetic_scenario"] == "interconnect_leakage"
     assert y.sum() > 0 and (g["flag"] & y).sum() == y.sum()
     assert (g.loc[~y, "unsettled_minutes"] >= 0).all() and (g.loc[y, "unsettled_share"] > 0.35).all()
+
+
+def test_rule_versions_default_beats_v1(data, tmp_path):
+    """Default rules (approved) and v1 both run; the four changed rules catch every plant with fewer or equal false alerts."""
+    out, _ = data
+    res = {}
+    for v in ("default", "v1"):
+        d = pd.read_parquet(run.main(["--data", str(out), "--out", str(tmp_path / v), "--run-id", v, "--rules", v]))
+        m = d[(d.record_type == "metric") & (d.model == "rule")]
+        res[v] = m.pivot_table(index="rule_id", columns="metric", values="value", aggfunc="first")
+    new, old = res["default"], res["v1"]
+    for rid in ("R_B06", "R_B09", "R_B16", "R_T01"):
+        assert new.loc[rid, "recall"] == 1.0
+        assert new.loc[rid, "recall"] >= old.loc[rid, "recall"]
+    for rid in ("R_B06", "R_B09", "R_B16"):
+        assert new.loc[rid, "precision"] > old.loc[rid, "precision"]
+    other = [r for r in new.index if r not in ("R_B06", "R_B09", "R_B16", "R_T01")]
+    pd.testing.assert_frame_equal(new.loc[other], old.loc[other])
+
+
+def test_benford_account_month_flags_planted_cluster():
+    from python.pipeline import rules
+    rng = np.random.default_rng(0)
+    n = 2000
+    amt = np.exp(rng.uniform(np.log(10), np.log(100000), n))  # log uniform follows Benford
+    d = pd.DataFrame({"account_id": rng.integers(0, 200, n).astype(str), "amount": amt,
+                      "timestamp": pd.Timestamp("2025-03-01") + pd.to_timedelta(rng.integers(0, 28 * 86400, n), unit="s")})
+    plant = pd.DataFrame({"account_id": "X", "amount": [700.5, 812.0, 7450.0, 8100.0, 760.0, 7020.0, 880.0, 8890.0, 790.0, 7300.0],
+                          "timestamp": pd.Timestamp("2025-03-05")})
+    d = pd.concat([d, plant], ignore_index=True)
+    f = rules.benford_account_month(d)
+    assert f[d.account_id == "X"].all() and f[d.account_id != "X"].sum() == 0
