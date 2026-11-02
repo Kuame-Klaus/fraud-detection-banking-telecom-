@@ -242,19 +242,19 @@ def travel_proposed(d):
 
 
 def ato_auth_proposed(d):
-    """2 or more failed logins, then a password reset, within 15 minutes, from abroad; flag every event in that window."""
+    """A password reset from abroad straight after 2 failed logins from the same device and IP within 15 minutes.
+    Flags those 3 events and the next 2 events of the same person when they follow within 15 minutes."""
     d2 = d.sort_values(["person_id", "timestamp"])
-    t = d2["timestamp"].astype("int64") // 10**9; p = d2["person_id"]
-    fail = d2["event_type"].eq("login_failed").astype(int); reset = d2["event_type"].eq("password_reset")
-    def win(s, w):  # count in the 900 s before each row, per person
-        x = pd.Series(s.to_numpy(), index=pd.to_datetime(t.to_numpy(), unit="s"))
-        return x.groupby(p.to_numpy()).rolling(f"{w}s").sum().reset_index(level=0, drop=True).to_numpy()
-    fails_before = win(fail, 900)
-    anchor = pd.Series(reset.to_numpy() & (fails_before >= 2) & d2["geo"].ne("GH").to_numpy(), index=d2.index)
-    # mark rows within 15 minutes before and after an anchor on the same person
-    at = pd.Series(np.where(anchor, t, np.nan), index=d2.index)
-    nxt = at.groupby(p).bfill(); prv = at.groupby(p).ffill()
-    flag = ((nxt - t).between(0, 900) | (t - prv).between(0, 900)) & d2["geo"].ne("GH")
+    g = d2.groupby("person_id", sort=False); t = d2["timestamp"].astype("int64") // 10**9
+    ok = d2["event_type"].eq("password_reset") & d2["geo"].ne("GH")
+    for k in (1, 2):
+        ok &= (g["event_type"].shift(k).eq("login_failed") & g["device_id"].shift(k).eq(d2["device_id"])
+               & g["ip"].shift(k).eq(d2["ip"]) & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= 900))
+    flag = ok.copy()
+    for k in (1, 2):
+        flag |= ok.groupby(d2["person_id"], sort=False).shift(-k, fill_value=False)  # the 2 failed logins
+        back = ok.groupby(d2["person_id"], sort=False).shift(k, fill_value=False)
+        flag |= back & ((t - g["timestamp"].shift(k).astype("int64") // 10**9) <= 900)  # the 2 events after the reset
     return flag.reindex(d.index)
 
 
