@@ -632,18 +632,18 @@ Every threshold is an ASSUMPTION default from the code, not a client parameter. 
 | R_B03 | mule_network | B1 | account_id | timestamp | (direction = "credit" AND amount > 4,000 AND secs_to_next < 3,600) OR (direction = "debit" AND secs_since_prev < 3,600 AND ent_day_count >= 5) |
 | R_B04 | dormant_account_wake_up | B1 | account_id | timestamp | acct_dormant = 1 AND amount > 5,000 |
 | R_B05 | kyc_mismatch_expected_volume | B1 | account_id | timestamp | amount_vs_expected > 20 |
-| R_B06 | impossible_travel | B1 | account_id | timestamp | country_change_fast = 1 |
+| R_B06 | impossible_travel | B1 | account_id | timestamp | sort by account_id, timestamp. Flag a pair of consecutive rows of the same account when both have channel = "card" and response_code = "00", the second is at most 1,800 seconds after the first, the countries differ, one is GH and the other GB or US. Flag both rows of the pair |
 | R_B07 | reversal_abuse | B1 | account_id | timestamp | reversal_flag = 1 AND sum of reversal_flag for the account >= 3 |
 | R_B08 | account_takeover | B1 | account_id | timestamp | channel = "web" AND amount > 2,500 AND secs_since_prev < 1,800 |
-| R_B09 | account_takeover | B4 | person_id (person) | timestamp | sort by person_id, timestamp. near = 1 when any of the 5 rows centred on this row (2 before, itself, 2 after, same person) has event_type "password_reset". fails = count of "login_failed" rows for the person over the whole period. Flag when near = 1 AND fails >= 2 AND geo is not "GH" |
+| R_B09 | account_takeover | B4 | person_id (person) | timestamp | sort by person_id, timestamp. An anchor is a password_reset with geo not GH whose 2 previous rows (same person) are both login_failed with the same device_id and ip as the reset and at most 900 seconds before it. Flag the anchor, its 2 previous rows, and each of the next 2 rows of the same person that are at most 900 seconds after the reset (see python/pipeline/rules.py ato_auth_proposed) |
 | R_B10 | journal_abuse | B7 | preparer_id (user) | entry_timestamp | is_manual is true AND (debit + credit) is a multiple of 10,000 AND (debit + credit) > 0 AND (weekday of entry_timestamp is Saturday or Sunday OR hour < 5) |
 | R_B11 | segregation_of_duties | B7 | preparer_id | entry_timestamp | preparer_id = approver_id |
 | R_B12 | privileged_access_before_journals | B7 | preparer_id | entry_timestamp | preparer_id is in the list of B8 user_id where permission = "admin_gl" AND is_manual is true |
 | R_B13 | ghost_vendor_or_employee | B10 | vendor_id (vendor) | payment_date | vendor_bank_account starts with "BEBANK" (synthetic marker only) |
 | R_B14 | duplicate_vendor_payments | B10 | vendor_id | payment_date | sort by payment_date; flag every row whose (vendor_id, payment_amount) pair already appeared earlier |
 | R_B15 | payroll_after_exit | B11 | employee_id (employee) | pay_date | exit_date not empty AND pay_date > exit_date AND pay_amount > 0 |
-| R_B16 | benford_anomaly | B1 | account_id | timestamp | lead_digit is 7 or 8 AND 700 <= amount < 9,000 |
-| R_T01 | sim_swap_fraud | T4 | wallet_id (wallet) | timestamp | hours_since_swap < 24 AND type = "cash_out" |
+| R_B16 | benford_anomaly | B1 | account_id | timestamp | lead = first digit of amount (0 when amount < 1). Per account_id and calendar month of timestamp: n = rows, c_k = rows with lead k for k 1 to 9, share_k = c_k / n, Benford p_k = log10(1 + 1/k). MAD = mean over k of abs(share_k minus p_k). chi = sum over k of (c_k minus n p_k) squared / (n p_k); p value from chi square with 8 degrees of freedom. The account month fails when n >= 8 AND MAD >= 0.12 AND p value <= 0.000001. Flag rows in failing account months whose lead k has share_k minus p_k > 0.10 |
+| R_T01 | sim_swap_fraud | T4 | wallet_id (wallet) | timestamp | h = hours from the latest T3 swap_time on the wallet's msisdn (via T5) at or before the transaction timestamp (an as of join), 100,000 when there is none. Flag h < 24 AND type = "cash_out" |
 | R_T02 | wallet_tier_breach | T4 | wallet_id | timestamp | over_tier = 1 |
 | R_T03 | dormant_wallet_drain | T4 | wallet_id | timestamp | wallet_dormant = 1 AND type = "cash_out" AND amount > 500 |
 | R_T04 | agent_fraud | T4 | agent_id (agent) | timestamp | type = "cash_in" AND round_amount = 1 AND agent_day_count >= 8 |
@@ -816,7 +816,7 @@ Every stack (Alteryx, KNIME, Python) writes one shared results file per run, out
 
 ## Acceptance checks on the sample
 
-Expected values come from the sample pipeline rerun at commit a689b4b (run_id python_sample_recheck). They will differ from the older committed outputs/sample file until that file is regenerated. That file holds these rows per record_type: score 22,971, geo 14,139, edge 1,201, drift 216, metric 215, dq 184, coverage 27, benford 27, threshold 10, run 7.
+Expected values come from the committed outputs/sample/results_python_sample.parquet (run_id python_sample, approved rules of round 6, generator with Benford clusters on one account month). That file holds these rows per record_type: score 17,619, geo 14,137, edge 1,201, metric 220, drift 216, dq 184, coverage 27, benford 27, threshold 10, run 7. Rule totals over all rules: planted rows 514, alerts 751, detected 490.
 
 ### Control totals and data quality
 
@@ -902,7 +902,7 @@ Every check in that run passed. Sample row counts are compared with themselves (
 | T7 | event_time_range | 2025-01-01 to 2026-01-31 | 2025-01-01 00:15:56 to 2025-12-31 23:51:57 |
 | T7 | negative_amount | 0 | 0 |
 | T8 | row_count_control_total | 125 | 125 |
-| T8 | sum_minutes_control_total | nan | 1263537.3 |
+| T8 | sum_minutes_control_total | nan | 734.3 |
 | T8 | null_cells | 0 | 0 |
 | T9 | row_count_control_total | 500 | 500 |
 | T9 | null_cells | 0 | 0 |
@@ -918,16 +918,16 @@ Monthly row counts (step 4) for the event tables:
 | dataset | month | rows |
 |---|---|---|
 | B1 | 2025-01 | 4274 |
-| B1 | 2025-02 | 3827 |
-| B1 | 2025-03 | 4219 |
-| B1 | 2025-04 | 4101 |
-| B1 | 2025-05 | 4386 |
-| B1 | 2025-06 | 4007 |
-| B1 | 2025-07 | 4319 |
-| B1 | 2025-08 | 4213 |
-| B1 | 2025-09 | 3985 |
-| B1 | 2025-10 | 4225 |
-| B1 | 2025-11 | 4114 |
+| B1 | 2025-02 | 3824 |
+| B1 | 2025-03 | 4218 |
+| B1 | 2025-04 | 4099 |
+| B1 | 2025-05 | 4385 |
+| B1 | 2025-06 | 4015 |
+| B1 | 2025-07 | 4326 |
+| B1 | 2025-08 | 4211 |
+| B1 | 2025-09 | 3984 |
+| B1 | 2025-10 | 4223 |
+| B1 | 2025-11 | 4111 |
 | B1 | 2025-12 | 4330 |
 | B4 | 2025-01 | 2073 |
 | B4 | 2025-02 | 1888 |
@@ -1016,27 +1016,27 @@ Monthly row counts (step 4) for the event tables:
 
 ### Alerts per rule
 
-Rule outputs are deterministic, so the Alteryx build must match these alert counts exactly. R_T09 (insider SIM swap) and R_T10 (IMEI churn) show the counts after the fix in commit b9371e2, with T3 planting fixed in 9b5c210. If those rules change again, rerun the sample and update this table.
+Rule outputs are deterministic, so the Alteryx build must match these alert counts exactly. R_T09 and R_T10 show the counts after the fix in commit b9371e2. R_B06, R_B09, R_B16 and R_T01 show the approved round 6 rules (old logic: --rules v1). These thresholds were tuned on SYNTHETIC data and must be retuned on real client data. If those rules change again, rerun the sample and update this table.
 
 | rule_id | scenario | dataset | planted rows | alerts | detected (alerts that are planted cases of this scenario) |
 |---|---|---|---|---|---|
 | R_B01 | card_testing | B1 | 20 | 20 | 20 |
 | R_B02 | structuring | B1 | 24 | 24 | 24 |
-| R_B03 | mule_network | B1 | 24 | 44 | 24 |
-| R_B04 | dormant_account_wake_up | B1 | 24 | 30 | 24 |
-| R_B05 | kyc_mismatch_expected_volume | B1 | 24 | 51 | 20 |
-| R_B06 | impossible_travel | B1 | 24 | 161 | 12 |
+| R_B03 | mule_network | B1 | 24 | 43 | 24 |
+| R_B04 | dormant_account_wake_up | B1 | 24 | 34 | 24 |
+| R_B05 | kyc_mismatch_expected_volume | B1 | 24 | 55 | 20 |
+| R_B06 | impossible_travel (approved rule, round 6) | B1 | 24 | 28 | 24 |
 | R_B07 | reversal_abuse | B1 | 24 | 24 | 24 |
 | R_B08 | account_takeover | B1 | 24 | 16 | 16 |
-| R_B09 | account_takeover | B4 | 10 | 583 | 10 |
+| R_B09 | account_takeover (approved rule, round 6) | B4 | 10 | 10 | 10 |
 | R_B10 | journal_abuse | B7 | 3 | 3 | 3 |
 | R_B11 | segregation_of_duties | B7 | 2 | 2 | 2 |
 | R_B12 | privileged_access_before_journals | B7 | 2 | 53 | 2 |
 | R_B13 | ghost_vendor_or_employee | B10 | 25 | 25 | 25 |
 | R_B14 | duplicate_vendor_payments | B10 | 1 | 1 | 1 |
 | R_B15 | payroll_after_exit | B11 | 9 | 9 | 9 |
-| R_B16 | benford_anomaly | B1 | 20 | 911 | 20 |
-| R_T01 | sim_swap_fraud | T4 | 24 | 20 | 6 |
+| R_B16 | benford_anomaly (approved rule, round 6) | B1 | 20 | 38 | 20 |
+| R_T01 | sim_swap_fraud (approved rule, round 6) | T4 | 24 | 54 | 24 |
 | R_T02 | wallet_tier_breach | T4 | 24 | 66 | 24 |
 | R_T03 | dormant_wallet_drain | T4 | 24 | 43 | 24 |
 | R_T04 | agent_fraud | T4 | 20 | 20 | 20 |

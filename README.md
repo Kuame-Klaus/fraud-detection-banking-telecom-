@@ -47,6 +47,9 @@ Where the pack is silent or unclear, Klaus Konsults has set defaults so work can
 2. Where the pack's field lists and SQL differ, the SQL names are kept.
 3. Extra control totals for B7 and T1, and SQL templates for datasets the pack has none for, sit in docs/sql/additions/, separate from the pack's SQL.
 4. Sizing: about 20 million rows in B1 and T1, T4 at a similar scale, other tables at assumed realistic proportions.
+5. Rule versions: the default rules and the older v1 rules are listed in config/rule_versions.yaml; run `python -m python.pipeline.run --rules v1` to compare. See docs/threshold_proposals.md.
+
+**Note.** Rule thresholds were tuned on SYNTHETIC data only. Every threshold in config/rule_versions.yaml and python/pipeline/rules.py, including the approved defaults for R_B06, R_B09, R_B16 and R_T01, must be retuned on real client data before any result is relied on.
 
 ## 4. One process, three stacks
 

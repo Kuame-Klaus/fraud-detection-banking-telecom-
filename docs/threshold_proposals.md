@@ -1,17 +1,19 @@
-# Threshold and logic proposals (for Klaus Konsults to approve)
+# Threshold and logic proposals (approved by Klaus Konsults)
 
-Status: PROPOSED. Nothing here changes the defaults on main. The proposed versions live in `python/pipeline/rules.py` (`PROPOSED`) and run only with `python -m python.pipeline.run --rules proposed`. All numbers are measured on SYNTHETIC data, sample (1/400 scale) and full (99,230,000 input rows). Precision = detected / alerts, recall = detected / planted rows.
+Status: APPROVED. All four proposals are now the defaults on main (round 6). The old values and logic are kept in `config/rule_versions.yaml` as `v1` and run with `python -m python.pipeline.run --rules v1` for comparison. All numbers are measured on SYNTHETIC data, sample (1/400 scale) and full (99,230,000 input rows). Precision = detected / alerts, recall = detected / planted rows.
 
-R_B06, R_T01 and the default columns come from full pipeline runs. R_B09 proposed was measured by running the rule function directly on the whole B4 table; its default numbers measured the same way equal the pipeline run exactly.
+**Important: these thresholds were tuned on SYNTHETIC data and must be retuned on real client data before any use in an engagement.**
+
+All columns below come from full pipeline runs on the current generator (the Benford change below moved some B1 timestamps, so v1 R_B06 on the full data is 68,287 alerts, not the 68,221 of the earlier round).
 
 ## R_B06 impossible travel (low precision and low recall)
 
-| | Current | Proposed |
+| | v1 | Default (approved) |
 |---|---|---|
 | Logic | country differs from the account's previous transaction and the gap is under 3,600 seconds; flags the second row only | both rows card and approved (response code 00), gap 1,800 seconds or less, one country GH and the other GB or US; flags both rows of the pair |
 | Sample planted / alerts / detected | 24 / 161 / 12 | 24 / 28 / 24 |
 | Sample precision / recall | 0.075 / 0.500 | 0.857 / 1.000 |
-| Full planted / alerts / detected | 9,981 / 68,221 / 4,995 | 9,981 / 11,729 / 9,971 |
+| Full planted / alerts / detected | 9,981 / 68,287 / 4,995 | 9,981 / 11,725 / 9,971 |
 | Full precision / recall | 0.073 / 0.500 | 0.850 / 0.999 |
 
 Reasoning. Recall was 0.5 because each planted case is a pair and only the second row was flagged. Precision was low because background countries are drawn at random, so any two quick transactions in different countries, including neighbours such as NG or TG, counted as travel.
@@ -19,7 +21,7 @@ Risks. The far country list (GB, US) is an ASSUMPTION and misses travel to other
 
 ## R_B09 account takeover in B4 auth events (low precision)
 
-| | Current | Proposed |
+| | v1 | Default (approved) |
 |---|---|---|
 | Logic | a password reset within 2 rows, 2 or more failed logins for the person over the whole period, geo not GH | a password reset from abroad straight after 2 failed logins from the same device and IP within 15 minutes; flags those 3 events and the next 2 within 15 minutes |
 | Sample planted / alerts / detected | 10 / 583 / 10 | 10 / 10 / 10 |
@@ -30,22 +32,22 @@ Risks. The far country list (GB, US) is an ASSUMPTION and misses travel to other
 Reasoning. Counting failed logins over the whole year means almost every person qualifies, so the rule fired on nearly every foreign event near a reset. A first proposal (2 failed logins and a reset within 15 minutes, any device) still gave 289,583 alerts on the full data and was dropped.
 Risks. Perfect precision reflects synthetic planting where the device and IP never change inside the attack. Real attackers rotate IPs, so the same IP condition may need to be relaxed to same device or same IP block.
 
-## R_B16 Benford anomaly (low precision): no row level change proposed
+## R_B16 Benford anomaly: built as a monthly population test per account
 
-| | Current | Tried and rejected |
+| | v1 | Default (approved) |
 |---|---|---|
-| Logic | first digit 7 or 8 and amount 700 to 8,999 | first two digits 70, 71, 80 or 81 in 700 to 899 or 7,000 to 8,999 |
-| Sample planted / alerts / detected | 20 / 911 / 20 | 20 / 203 / 2 |
-| Sample precision / recall | 0.022 / 1.000 | 0.010 / 0.100 |
-| Full planted / alerts / detected | 9,992 / 395,603 / 9,992 | not run |
+| Logic | row flag: first digit 7 or 8 and amount 700 to 8,999 | per account and calendar month: with at least 8 rows, MAD of first digit shares against Benford of 0.12 or more and chi square p value (8 degrees of freedom) of 0.000001 or less; flags the rows in failing account months whose first digit share is more than 0.10 above Benford |
+| Sample planted / alerts / detected | 20 / 911 / 20 | 20 / 38 / 20 |
+| Sample precision / recall | 0.022 / 1.000 | 0.526 / 1.000 |
+| Full planted / alerts / detected | 9,992 / 395,603 / 9,992 | 9,992 / 16,788 / 9,809 |
+| Full precision / recall | 0.025 / 1.000 | 0.584 / 0.982 |
 
-Reasoning. The planted amounts are first digit 7 or 8 times a random factor of 1.00 to 1.12, on random accounts at random times. At row level they look like ordinary amounts, so no row rule can separate them without fitting the generator. Benford is a population test.
-Proposal for approval. (1) Keep the Benford digit counts already in the results (record_type benford) as the main test, and add a monthly chi square or MAD score per dataset, with an alert when it passes a set level. (2) Change the generator so a Benford case is a cluster on one account or one vendor, then test per account or vendor. Neither is built yet.
-Risks. A population test gives no per transaction alert list, so investigators get a month or entity to review instead.
+Population unit. Account month (account_id and calendar month of the transaction). The row level test could not separate planted amounts, so the generator change named in the earlier proposal was needed and was made (commit 54cfe20): each Benford block is now planted on one account inside one calendar month. Only B1 changed; sample and full data were regenerated.
+Risks. Accounts with few rows a month cannot be tested (fewer than 8 rows). Some genuine accounts with repeated fixed payments will fail Benford. On the full data 183 planted rows were missed, and about 7,000 rows of genuine accounts were flagged. Runtime of the rules stage rose from 153.9 s (v1) to 321.8 s on the full data, mainly from this test.
 
 ## R_T01 SIM swap fraud (low recall)
 
-| | Current | Proposed |
+| | v1 | Default (approved) |
 |---|---|---|
 | Logic | cash out within 24 hours after the latest SIM swap on the wallet's number over the whole period | cash out within 24 hours after the latest swap at or before the transaction (as of join) |
 | Sample planted / alerts / detected | 24 / 20 / 6 | 24 / 54 / 24 |
@@ -56,5 +58,5 @@ Risks. A population test gives no per transaction alert list, so investigators g
 Reasoning. This is a logic bug as much as a threshold. The feature used only the last swap of the year, so when a number had a later background swap the hours came out negative and the planted drain was missed.
 Risks. More alerts in total (22,231 against 13,410). The 24 hour window and cash out only stay ASSUMPTION defaults. Genuine customers who swap a lost SIM and then withdraw cash will still be flagged.
 
-## Not changed
+## Not changed in this round
 R_T08 was changed in this round with approval (route and day level); see docs/test_catalogue.md.

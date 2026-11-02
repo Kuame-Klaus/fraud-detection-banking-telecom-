@@ -69,7 +69,7 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** Someone else taking control of an online account and moving money out.
 * **Data.** B4 person_id, event_type, timestamp, geo. B1 channel, amount, timestamp.
-* **Rules.** R_B09 on B4: a password reset among a person's nearby events (a rolling window of 5), at least 2 failed logins, and a login location outside GH. R_B08 on B1: a web transfer over 2,500 within 30 minutes of the previous transaction. All values are ASSUMPTION defaults.
+* **Rules.** R_B09 on B4 (default since round 6): a password reset from outside GH straight after 2 failed logins from the same device and IP within 15 minutes; flags those 3 events and the next 2 within 15 minutes. Version v1 (a reset within a window of 5 rows, 2 or more failed logins over the whole period, geo not GH) stays selectable with --rules v1. R_B08 on B1: a web transfer over 2,500 within 30 minutes of the previous transaction. All values are ASSUMPTION defaults.
 * **Model features.** channel_web, log_amount, secs_since_prev, amount_z, is_debit.
 * **Outputs.** Two sets of rule rows under scenario account_takeover, rule_ids R_B08 (B1) and R_B09 (B4).
 * **Planted cases.** In B4, a burst of 5 events within 15 minutes; in B1, 3 large web debits within 30 minutes.
@@ -157,7 +157,7 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** A card used in two countries too close in time for one person, so one use is likely fraud.
 * **Data.** B1 account_id, country, timestamp.
-* **Rule R_B06.** Flags a country change within an hour of the previous transaction. ASSUMPTION default.
+* **Rule R_B06.** Default since round 6: two approved card transactions within 30 minutes, one in GH and the other in GB or US; flags both rows. ASSUMPTION defaults. Version v1 (any country change within an hour, second row only) stays selectable with --rules v1.
 * **Model features.** country_change_fast, foreign.
 * **Outputs.** Rule rows for impossible_travel.
 * **Planted cases.** A GH card transaction then one in the US or GB within 30 minutes.
@@ -200,10 +200,10 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** Made up amounts, which often break the natural pattern of first digits (more 1s than 9s).
 * **Data.** B1 amount; B7 debit for the chart.
-* **Rule R_B16.** Flags B1 amounts from 700 to under 9,000 that start with 7 or 8. ASSUMPTION choice.
+* **Rule R_B16.** Default since round 6: a Benford population test per account and calendar month. An account month with 8 or more transactions fails when the mean absolute difference between its first digit shares and Benford is 0.12 or more and the chi square p value (8 degrees of freedom) is 0.000001 or less. Flags the rows in failing account months whose first digit share is more than 10 points above Benford. ASSUMPTION defaults. Version v1 (row flag: amounts 700 to under 9,000 starting with 7 or 8) stays selectable with --rules v1.
 * **Model features.** lead_digit.
 * **Outputs.** Rule rows for benford_anomaly, and benford rows (first_digit, observed_count, expected_share) for B1, B7 and T4.
-* **Planted cases.** Clusters of 10 amounts forced to start with 7 or 8.
+* **Planted cases.** Clusters of 10 amounts starting with 7 or 8, each cluster on one account within one calendar month (generator version 2; version 1 spread them over random accounts and times).
 * **Differs from plan.** The plan uses B7 and B10 for the test. The rule reads B1 and the chart covers B1, B7 and T4. B10 is not included.
 * **Limits and false positives.** Benford is a population check, not a single transaction test. Many genuine amounts start with 7 or 8, so this rule will raise many false alerts on real data.
 
@@ -224,11 +224,11 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** A fraudster moves a victim's number to a new SIM, then drains their mobile money wallet.
 * **Data.** T3 msisdn, swap_time. T4 wallet_id, timestamp, type, amount. T5 wallet_id, msisdn (links wallets to numbers within telecom).
-* **Rule R_T01.** Flags a cash out within 24 hours after the latest SIM swap on the wallet's number. ASSUMPTION default.
+* **Rule R_T01.** Default since round 6: flags a cash out within 24 hours after the latest SIM swap at or before the transaction on the wallet's number. ASSUMPTION default. Version v1 used the latest swap of the whole period, which missed plants when a later swap existed.
 * **Model features.** hours_since_swap, type_cash_out, log_amount, secs_since_prev.
 * **Outputs.** Rule rows for sim_swap_fraud, dataset_id T4.
 * **Planted cases.** Swaps in T3, followed within hours by cash outs in T4 for the same wallet.
-* **Differs from plan.** The pack also uses OTP requests, which no T dataset holds. The plan lists T2; the code uses T5 instead. Only the latest swap per number is used.
+* **Differs from plan.** The pack also uses OTP requests, which no T dataset holds. The plan lists T2; the code uses T5 instead. The swap history is joined as of each transaction.
 * **Limits and false positives.** Customers who replace a lost phone and withdraw cash the same day.
 
 ### 17. SIM box and bypass (pack)

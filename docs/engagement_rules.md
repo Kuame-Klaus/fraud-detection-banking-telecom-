@@ -20,3 +20,7 @@ Verbatim from the Fraud Audit Data Request and Extraction Pack, sections 1 and 7
 * Model documents, validation reports, performance monitoring and the process for retraining.
 * Fraud loss reports, recoveries, regulator returns and any internal audit findings.
 * An organisation chart for the fraud and risk teams, plus the data flow from source systems to the monitoring tool, so you can test completeness at each hand-off.
+
+## Note from Klaus Konsults (not part of the pack)
+
+Rule thresholds were tuned on SYNTHETIC data only. Every threshold in config/rule_versions.yaml and python/pipeline/rules.py, including the approved defaults for R_B06, R_B09, R_B16 and R_T01, must be retuned on real client data before any result is relied on.
