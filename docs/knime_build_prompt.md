@@ -650,14 +650,14 @@ Every threshold is an ASSUMPTION default from the code, not a client parameter. 
 | R_T05 | sim_box_and_bypass | T1 | caller (msisdn) | start_time | call_type = "voice" AND rows for the caller that day >= 20 AND duration_sec < 150 |
 | R_T06 | wangiri | T1 | caller | start_time | duration_sec <= 3 AND count of such short calls for the caller over the period >= 10 |
 | R_T07 | subscription_and_bust_out | T1 | caller | start_time | duration_sec >= 1,800 AND roaming_flag is true |
-| R_T08 | interconnect_leakage | T1 | route (route) | start_time | route is in the leaky route list (below) |
+| R_T08 | interconnect_leakage | T8 joined to T1 | route (route), one row per route and day | traffic_date | see the route day test below |
 | R_T09 | insider_sim_swap_or_access_abuse | T3 | performed_by_user (user) | swap_time | night = hour of swap_time < 5 (UTC). c = count of night swaps by the same user on the same calendar day. Flag night AND c >= 5 |
 | R_T10 | imei_churn | T3 | msisdn (msisdn) | swap_time | sort by msisdn, swap_time. A row starts a run when the swap 3 rows later for the same msisdn is within 30 days of it. Flag every row that starts a run or is one of the 3 rows after a run start (same msisdn). In short: 4 or more swaps on one number within 30 days |
 | R_T11 | recharge_fraud | T7 | msisdn | event_time | event_type = "topup" AND rows for the msisdn that day (any event_type) >= 8 |
 | R_T12 | subscription_and_bust_out | T7 | msisdn | event_time | bad_debt_amount > 1,000 |
 | R_T13 | agent_float_anomalies | T6 | agent_id | movement_time | hour of movement_time < 5 AND float_amount > 30,000 |
 
-Leaky route list for R_T08: m = sum of T1 duration_sec per route divided by 60. s = sum of T8 settlement_amount per route divided by sum of T8 minutes per route. Keep routes present in T1; a route is leaky when s < 0.6 times the median of s over those routes. Routes missing from T8 are not flagged. The join is on route only, since T1 has no carrier.
+Route day test for R_T08 (changed in this round; it used to flag every T1 call on a leaky route): t1 = sum of T1 duration_sec per route and UTC calendar day of start_time, divided by 60. For each route and day in T8: settled = sum of T8 minutes, amount = sum of T8 settlement_amount, unsettled_minutes = t1 minus settled (t1 is 0 when T1 has no calls that day), unsettled_share = unsettled_minutes / t1 (0 when t1 is 0), settlement_rate = amount / settled. Flag the route day when unsettled_share >= 0.35 AND settlement_rate < 0.6 times the median settlement_rate over all T8 route days. Output one rule row per flagged route day: record_id = route + "_" + day, entity_id = route, event_timestamp = day at 00:00:00Z, amount = unsettled_minutes, true_scenario from the T8 synthetic_scenario. Route days with T1 traffic but no T8 row are counted in a metric row route_days_without_settlement_row, not flagged. The join is on route and day only, since T1 has no carrier.
 
 Privileged user list for R_B12: all B8 user_id where permission = "admin_gl".
 
@@ -1041,7 +1041,7 @@ Rule outputs are deterministic, so the KNIME build must match these alert counts
 | R_T05 | sim_box_and_bypass | T1 | 50 | 69 | 38 |
 | R_T06 | wangiri | T1 | 30 | 30 | 30 |
 | R_T07 | subscription_and_bust_out | T1 | 20 | 20 | 20 |
-| R_T08 | interconnect_leakage | T1 | 20 | 3822 | 20 |
+| R_T08 | interconnect_leakage (route days, changed rule) | T8 | 11 | 11 | 11 |
 | R_T09 | insider_sim_swap_or_access_abuse (fixed rule) | T3 | 8 | 8 | 8 |
 | R_T10 | imei_churn (fixed rule) | T3 | 6 | 7 | 6 |
 | R_T11 | recharge_fraud | T7 | 15 | 15 | 15 |

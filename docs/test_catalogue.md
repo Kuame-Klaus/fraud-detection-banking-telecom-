@@ -333,12 +333,12 @@ Counts: banking 15 (7 pack, 8 added), telecom 12 (5 pack, 7 added), detection re
 
 * **What it catches.** Traffic carried on a route that is under settled, so revenue is lost.
 * **Data.** T1 route, duration_sec. T8 route, minutes, settlement_amount.
-* **Rule R_T08.** Works out each route's settlement per minute from T8 and flags all T1 calls on routes below 60% of the median. ASSUMPTION default.
+* **Rule R_T08.** Runs at route and day level. For each route day in T8, unsettled minutes = T1 minutes minus T8 settled minutes and the settlement rate = settlement amount per settled minute. Flags the route day when at least 35% of the T1 minutes are unsettled and the rate is below 60% of the median rate. ASSUMPTION defaults. Changed from flagging every T1 call on a low rate route (sample 3,822 alerts for 20 planted calls).
 * **Model features.** None.
-* **Outputs.** Rule rows for interconnect_leakage, plus geo rows with geo_minutes and geo_settled_minutes per route and day.
-* **Planted cases.** Traffic placed on routes 37 to 39, which are unsettled in T8.
-* **Differs from plan.** The plan compares T1 minutes with settled minutes per day. The rule compares settlement rates per route over the whole period. The minutes comparison exists only in the geo rows.
-* **Limits and false positives.** Routes with genuinely cheaper rates. Flags whole routes, not single calls.
+* **Outputs.** One rule row per flagged route day for interconnect_leakage (dataset_id T8, amount = unsettled minutes), a route_days_without_settlement_row metric, plus geo rows with geo_minutes and geo_settled_minutes per route and day.
+* **Planted cases.** T8 route days on routes 37 to 39, settled at 60% of their T1 minutes and at 40% of the normal rate (sample 11 route days, full 1,095). Normal route days settle at 97% to 100% of their T1 minutes.
+* **Differs from plan.** Now matches the plan: T1 minutes against settled minutes per route and day. Carrier is not used, since T1 has none.
+* **Limits and false positives.** Days with late settlement files, and cheaper negotiated rates. Route days with no T8 row are reported as a count, not flagged.
 
 ### 27. Agent float anomalies (added)
 
