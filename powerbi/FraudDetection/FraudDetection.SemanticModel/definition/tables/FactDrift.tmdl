@@ -1,0 +1,76 @@
+table FactDrift
+	lineageTag: b1e90141-eb0c-5b68-92ef-0656d24b3898
+
+	column run_id
+		dataType: string
+		lineageTag: 503b4315-129f-5ede-bde3-e669a7549be5
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 57cb5f92-b7db-54ee-a249-737cbb619fef
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: ec852f8a-f7f1-5be4-8093-d7835df8b185
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 5a9c82dd-b371-5f2b-9d7c-2331165daa3a
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: string
+		lineageTag: 5535f65d-16c7-5ae8-989e-1710e21663a8
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column score_band
+		dataType: string
+		lineageTag: 9ad58326-6e22-57e1-b355-22cd42e03cd2
+		summarizeBy: none
+		sourceColumn: score_band
+
+		annotation SummarizationSetBy = Automatic
+
+	column band_share
+		dataType: double
+		lineageTag: 0d068358-ef23-52a8-b2b9-a00d8b9f1569
+		summarizeBy: none
+		sourceColumn: band_share
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: double
+		lineageTag: 6eebe5ad-ac13-53af-b876-35fdd208bafe
+		summarizeBy: none
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactDrift = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "drift"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "model", "month", "score_band", "band_share", "value"})
+				in
+				    Kept

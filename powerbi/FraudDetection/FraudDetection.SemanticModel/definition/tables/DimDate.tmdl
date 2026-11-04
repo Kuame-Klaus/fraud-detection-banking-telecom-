@@ -1,0 +1,44 @@
+table DimDate
+	lineageTag: 2326aa6d-3f8b-5ec2-9651-b9ee0afde8b9
+
+	column Date
+		dataType: dateTime
+		isNameInferred
+		lineageTag: 4b12f83c-0acc-56c5-b79c-5ab1de11649c
+		summarizeBy: none
+		sourceColumn: [Date]
+		formatString: yyyy-mm-dd
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		isNameInferred
+		lineageTag: 858610bb-7dc5-568e-89ed-76b7a984cd23
+		summarizeBy: none
+		sourceColumn: [Month]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Weekday
+		dataType: string
+		isNameInferred
+		lineageTag: d1186cff-195a-54cc-a8e7-5f77ae8882da
+		summarizeBy: none
+		sourceColumn: [Weekday]
+		sortByColumn: WeekdayNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekdayNumber
+		dataType: int64
+		isNameInferred
+		lineageTag: 753ed8aa-7f18-5216-bb00-91a03303e157
+		summarizeBy: none
+		sourceColumn: [WeekdayNumber]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimDate = calculated
+		mode: import
+		source = ADDCOLUMNS ( CALENDAR ( MIN ( FactScore[event_date] ), MAX ( FactScore[event_date] ) ), "Month", FORMAT ( [Date], "yyyy-MM" ), "Weekday", FORMAT ( [Date], "dddd" ), "WeekdayNumber", WEEKDAY ( [Date], 2 ) )

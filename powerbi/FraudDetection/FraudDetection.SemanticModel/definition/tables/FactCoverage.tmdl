@@ -1,0 +1,70 @@
+table FactCoverage
+	lineageTag: 4b035a16-3ecc-5722-8e65-7a1b60f4ff62
+
+	column run_id
+		dataType: string
+		lineageTag: ac4a90c2-f7b0-53ab-9423-5db15b29f685
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: bfbff5d1-14e5-5c05-a9aa-e052da0c9b19
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 6755c88b-cd8e-5a75-88dc-6e689b2db003
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 1427fabd-bf54-56a2-b489-9ca6cd5d9811
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: 33a66a54-786e-502d-b9d2-853e8e3a72ec
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column covered
+		dataType: boolean
+		lineageTag: 6eca66fb-a575-5e71-b842-38d37bf0b93d
+		summarizeBy: none
+		sourceColumn: covered
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: 5545d982-fc69-53cd-9d97-780b074b20e1
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactCoverage = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "coverage"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "scenario", "note", "covered"}),
+				    Add_scenario_key = Table.AddColumn(Kept, "scenario_key", each (if [domain] = null then "" else [domain]) & "|" & (if [scenario] = null then "" else [scenario]), type text)
+				in
+				    Add_scenario_key

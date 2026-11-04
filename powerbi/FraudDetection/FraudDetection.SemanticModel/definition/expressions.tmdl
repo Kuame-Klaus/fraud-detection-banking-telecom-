@@ -1,0 +1,111 @@
+expression pDataSource = "local_sample" meta [IsParameterQuery = true, List = {"local_sample", "github_sample", "github_full"}, DefaultValue = "local_sample", Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: f1da6c84-4ee1-5ba4-8920-a4cfb2e35c30
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression pLocalFolder = "C:\FraudDetection\" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: b7c4b5ff-bfeb-59a4-9647-49807a0d81f7
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression pBaseUrl = "https://raw.githubusercontent.com/Kuame-Klaus/fraud-detection-banking-telecom-/main/" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: c1409005-c9c3-5616-a8c4-5276d63885b6
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression Results =
+		let
+		    FromCsv = (bin as binary) as table =>
+		        let
+		            Csv = Csv.Document(bin, [Delimiter = ",", Columns = 61, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+		            Promoted = Table.PromoteHeaders(Csv, [PromoteAllScalars = true])
+		        in
+		            Promoted,
+		    LocalSample = () => FromCsv(File.Contents(pLocalFolder & "data\sample\results_latest.csv")),
+		    GitHubSample = () => FromCsv(Web.Contents(pBaseUrl, [RelativePath = "outputs/sample/results_latest.csv"])),
+		    GitHubFull = () =>
+		        let
+		            Manifest = Json.Document(Web.Contents(pBaseUrl, [RelativePath = "outputs/full/results_parts/manifest.json"])),
+		            Parts = List.Transform(Manifest[parts], each Parquet.Document(Binary.Buffer(Web.Contents(pBaseUrl, [RelativePath = "outputs/full/results_parts/" & _[file]])))),
+		            Combined = Table.Combine(Parts)
+		        in
+		            Combined,
+		    Raw = if pDataSource = "github_full" then GitHubFull() else if pDataSource = "github_sample" then GitHubSample() else LocalSample(),
+		    Selected = Table.SelectColumns(Raw, {"record_type", "run_id", "created_at", "stack", "domain", "dataset_id", "scenario", "model", "rule_id", "split", "record_id", "entity_id", "entity_type", "event_timestamp", "month", "score", "threshold", "predicted_label", "true_label", "true_scenario", "amount", "currency", "metric", "value", "alert_rate", "train_rows", "sample_method", "step", "check_name", "expected", "observed", "passed", "note", "covered", "threshold_change_pct", "alert_count", "detected_count", "score_band", "band_share", "compare_stack", "source_id", "target_id", "edge_weight", "edge_count", "first_digit", "observed_count", "expected_share", "route", "cell_id", "latitude", "longitude", "geo_minutes", "geo_settled_minutes", "runtime_seconds", "peak_memory_mb", "stage", "feature", "coefficient", "odds_ratio", "curve_precision", "curve_recall"}, MissingField.UseNull),
+		    Blanks = Table.ReplaceValue(Selected, "", null, Replacer.ReplaceValue, {"record_type", "run_id", "created_at", "stack", "domain", "dataset_id", "scenario", "model", "rule_id", "split", "record_id", "entity_id", "entity_type", "event_timestamp", "month", "score", "threshold", "predicted_label", "true_label", "true_scenario", "amount", "currency", "metric", "value", "alert_rate", "train_rows", "sample_method", "step", "check_name", "expected", "observed", "passed", "note", "covered", "threshold_change_pct", "alert_count", "detected_count", "score_band", "band_share", "compare_stack", "source_id", "target_id", "edge_weight", "edge_count", "first_digit", "observed_count", "expected_share", "route", "cell_id", "latitude", "longitude", "geo_minutes", "geo_settled_minutes", "runtime_seconds", "peak_memory_mb", "stage", "feature", "coefficient", "odds_ratio", "curve_precision", "curve_recall"}),
+		    Typed = Table.TransformColumnTypes(Blanks, {
+		{"record_type", type text},
+		{"run_id", type text},
+		{"created_at", type datetimezone},
+		{"stack", type text},
+		{"domain", type text},
+		{"dataset_id", type text},
+		{"scenario", type text},
+		{"model", type text},
+		{"rule_id", type text},
+		{"split", type text},
+		{"record_id", type text},
+		{"entity_id", type text},
+		{"entity_type", type text},
+		{"event_timestamp", type datetimezone},
+		{"month", type text},
+		{"score", type number},
+		{"threshold", type number},
+		{"predicted_label", Int64.Type},
+		{"true_label", Int64.Type},
+		{"true_scenario", type text},
+		{"amount", type number},
+		{"currency", type text},
+		{"metric", type text},
+		{"value", type number},
+		{"alert_rate", type number},
+		{"train_rows", Int64.Type},
+		{"sample_method", type text},
+		{"step", Int64.Type},
+		{"check_name", type text},
+		{"expected", type text},
+		{"observed", type text},
+		{"passed", type logical},
+		{"note", type text},
+		{"covered", type logical},
+		{"threshold_change_pct", type number},
+		{"alert_count", Int64.Type},
+		{"detected_count", Int64.Type},
+		{"score_band", type text},
+		{"band_share", type number},
+		{"compare_stack", type text},
+		{"source_id", type text},
+		{"target_id", type text},
+		{"edge_weight", type number},
+		{"edge_count", Int64.Type},
+		{"first_digit", Int64.Type},
+		{"observed_count", Int64.Type},
+		{"expected_share", type number},
+		{"route", type text},
+		{"cell_id", type text},
+		{"latitude", type number},
+		{"longitude", type number},
+		{"geo_minutes", type number},
+		{"geo_settled_minutes", type number},
+		{"runtime_seconds", type number},
+		{"peak_memory_mb", type number},
+		{"stage", type text},
+		{"feature", type text},
+		{"coefficient", type number},
+		{"odds_ratio", type number},
+		{"curve_precision", type number},
+		{"curve_recall", type number}
+		    }, "en-US")
+		in
+		    Typed
+	lineageTag: 319fb9f1-5978-53cd-940b-3597dba99b45
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

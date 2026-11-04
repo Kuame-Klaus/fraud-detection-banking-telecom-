@@ -1,0 +1,100 @@
+table FactPRCurve
+	lineageTag: 46f64e60-fe0c-55bc-a201-bbad7f965089
+
+	column run_id
+		dataType: string
+		lineageTag: 1923f15a-202b-51a4-8021-6eb97f9b8cd9
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 8877a02d-32d1-53da-ba2d-17006cebe689
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 296f7fe7-1260-50fa-9a50-d9fc50ca7efa
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: 345acca9-61e4-5f3d-83e2-8ef6caab2e00
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 07e85338-6893-55fa-a4e1-8fdadfced9ac
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 2a635afb-86e9-54dd-ab59-3de90b41aa76
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column split
+		dataType: string
+		lineageTag: 36550739-81ac-563d-b71f-be652dbf5cad
+		summarizeBy: none
+		sourceColumn: split
+
+		annotation SummarizationSetBy = Automatic
+
+	column threshold
+		dataType: double
+		lineageTag: 90e20588-e2ac-5184-ac31-32956ba50af2
+		summarizeBy: none
+		sourceColumn: threshold
+
+		annotation SummarizationSetBy = Automatic
+
+	column step
+		dataType: int64
+		lineageTag: a2866957-7b21-5d79-a482-f0e3c3ceaadf
+		summarizeBy: none
+		sourceColumn: step
+
+		annotation SummarizationSetBy = Automatic
+
+	column curve_precision
+		dataType: double
+		lineageTag: 3a6cbb29-8cd1-59ef-a383-436946e8b953
+		summarizeBy: none
+		sourceColumn: curve_precision
+
+		annotation SummarizationSetBy = Automatic
+
+	column curve_recall
+		dataType: double
+		lineageTag: daf9b856-2ae1-5a73-981c-41b0321da1c9
+		summarizeBy: none
+		sourceColumn: curve_recall
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactPRCurve = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "pr_curve"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "scenario", "model", "split", "threshold", "step", "curve_precision", "curve_recall"})
+				in
+				    Kept

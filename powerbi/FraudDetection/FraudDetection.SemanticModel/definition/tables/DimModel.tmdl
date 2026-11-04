@@ -1,0 +1,30 @@
+table DimModel
+	lineageTag: 2d969298-680a-5c67-97e5-9cd06982a033
+
+	column model
+		dataType: string
+		lineageTag: 4ed2c5a6-5589-5690-a007-1df98d585ce4
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column model_note
+		dataType: string
+		lineageTag: a350c509-dd74-5f61-a64a-a4deffe2acbc
+		summarizeBy: none
+		sourceColumn: model_note
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimModel = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [model = type text, model_note = type text], {
+				        {"logistic_regression", "default model"},
+				        {"xgboost", "optional model, run the pipeline with --model xgboost"},
+				        {"rule", "rule engine"}
+				    })
+				in
+				    Source

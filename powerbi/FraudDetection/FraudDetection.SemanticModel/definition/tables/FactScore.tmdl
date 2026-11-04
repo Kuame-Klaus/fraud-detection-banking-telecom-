@@ -1,0 +1,222 @@
+table FactScore
+	lineageTag: 4a83c334-b517-5a15-9ef5-5f03ab9bfba0
+
+	column run_id
+		dataType: string
+		lineageTag: 2669b5c6-e18b-5f52-a017-0403ead230c2
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 4832bd76-1fc4-54e0-8f07-9ec91a1af8b6
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: a855c947-6e92-578c-8b4c-eeaef1e4aaf9
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: 443cc4c8-f7f7-520b-bf60-badc035ae879
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 0d166b82-1511-597f-9175-143d99fceed0
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 71f7dddc-f3a6-5ddf-b29c-945de593d949
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column rule_id
+		dataType: string
+		lineageTag: 72801e74-a2c9-50ce-b4ba-6d5ef2f710d1
+		summarizeBy: none
+		sourceColumn: rule_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column split
+		dataType: string
+		lineageTag: 2d57e30c-75f5-584a-83b1-f215979e4a8e
+		summarizeBy: none
+		sourceColumn: split
+
+		annotation SummarizationSetBy = Automatic
+
+	column record_id
+		dataType: string
+		lineageTag: 20b45778-cc8e-5b7c-b3ab-f392eff6890b
+		summarizeBy: none
+		sourceColumn: record_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column entity_id
+		dataType: string
+		lineageTag: 794a2be6-7861-54a8-822f-43da504f8cd6
+		summarizeBy: none
+		sourceColumn: entity_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column entity_type
+		dataType: string
+		lineageTag: 802b2324-a4bd-55bb-bb49-304dc0aab62f
+		summarizeBy: none
+		sourceColumn: entity_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column event_timestamp
+		dataType: dateTime
+		lineageTag: c439bc50-b3cd-535c-87d1-b13847f0070e
+		summarizeBy: none
+		sourceColumn: event_timestamp
+		formatString: yyyy-mm-dd
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: string
+		lineageTag: 5d21461c-4214-5866-8d0c-00b65612728d
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column score
+		dataType: double
+		lineageTag: 474c9f58-e3fc-5b28-a553-134c60f93628
+		summarizeBy: none
+		sourceColumn: score
+
+		annotation SummarizationSetBy = Automatic
+
+	column threshold
+		dataType: double
+		lineageTag: 9d04ba11-506b-5898-bbc9-0a5f61e0f10b
+		summarizeBy: none
+		sourceColumn: threshold
+
+		annotation SummarizationSetBy = Automatic
+
+	column predicted_label
+		dataType: int64
+		lineageTag: c29ace13-89d8-5fb6-afee-65e2ec51e8a9
+		summarizeBy: none
+		sourceColumn: predicted_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column true_label
+		dataType: int64
+		lineageTag: dc35f1e7-0355-57a4-8fb0-a3a42bfddfda
+		summarizeBy: none
+		sourceColumn: true_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column true_scenario
+		dataType: string
+		lineageTag: d5ce1c2a-c96f-5648-be12-6f193e6b005f
+		summarizeBy: none
+		sourceColumn: true_scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column amount
+		dataType: double
+		lineageTag: f96ba4b0-0113-5849-90ba-df744192da35
+		summarizeBy: none
+		sourceColumn: amount
+
+		annotation SummarizationSetBy = Automatic
+
+	column currency
+		dataType: string
+		lineageTag: fb2703e8-f158-5160-bc5c-bd0ea1adafe6
+		summarizeBy: none
+		sourceColumn: currency
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: 42a70737-7f20-5b5f-91e4-dea63e1ac613
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column event_date
+		dataType: dateTime
+		lineageTag: 220c79a0-ff5e-5307-b6f7-3b48cefd65de
+		summarizeBy: none
+		sourceColumn: event_date
+		formatString: yyyy-mm-dd
+
+		annotation SummarizationSetBy = Automatic
+
+	column HourOfDay
+		dataType: int64
+		lineageTag: 51877a4d-9df2-5485-99ae-eae16503858a
+		summarizeBy: none
+		sourceColumn: HourOfDay
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekdayNumber
+		dataType: int64
+		isHidden
+		lineageTag: 9774b13c-fee1-57ad-a11d-8c51284e06b4
+		summarizeBy: none
+		sourceColumn: WeekdayNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column Weekday
+		dataType: string
+		lineageTag: 4ea1066b-94cc-5ce2-9520-d663d893dc37
+		summarizeBy: none
+		sourceColumn: Weekday
+		sortByColumn: WeekdayNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactScore = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "score"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "scenario", "model", "rule_id", "split", "record_id", "entity_id", "entity_type", "event_timestamp", "month", "score", "threshold", "predicted_label", "true_label", "true_scenario", "amount", "currency"}),
+				    Add_scenario_key = Table.AddColumn(Kept, "scenario_key", each (if [domain] = null then "" else [domain]) & "|" & (if [scenario] = null then "" else [scenario]), type text),
+				    AddDate = Table.AddColumn(Add_scenario_key, "event_date", each if [event_timestamp] = null then null else DateTime.Date(DateTimeZone.RemoveZone(DateTimeZone.ToUtc([event_timestamp]))), type date),
+				    AddHour = Table.AddColumn(AddDate, "HourOfDay", each if [event_timestamp] = null then null else Time.Hour(DateTimeZone.RemoveZone(DateTimeZone.ToUtc([event_timestamp]))), Int64.Type),
+				    AddWeekdayNumber = Table.AddColumn(AddHour, "WeekdayNumber", each if [event_date] = null then null else Date.DayOfWeek([event_date], Day.Monday) + 1, Int64.Type),
+				    AddWeekday = Table.AddColumn(AddWeekdayNumber, "Weekday", each if [event_date] = null then null else Date.DayOfWeekName([event_date], "en-US"), type text)
+				in
+				    AddWeekday

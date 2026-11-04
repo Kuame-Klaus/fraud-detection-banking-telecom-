@@ -1,0 +1,78 @@
+table FactAgreement
+	lineageTag: b94da2a4-a293-56ca-80b8-d5c4fc9c1410
+
+	column run_id
+		dataType: string
+		lineageTag: dcb91b62-0e1f-51e8-bdbb-07bccd83c2ab
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 7e5283ce-7a25-5c19-afbf-9bf66a1c6dc9
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 205fa7f0-05d1-523e-bb94-a8cea363ff0b
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: d27b3744-1492-5787-86da-9426e10ff245
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 0a87ceab-a53f-5f73-8d57-3ab120db1112
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column compare_stack
+		dataType: string
+		lineageTag: c648da69-7359-557d-9603-4e43823d11d5
+		summarizeBy: none
+		sourceColumn: compare_stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: double
+		lineageTag: 06afe054-7cc5-5004-956f-d0e816c112ee
+		summarizeBy: none
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: 5d749329-7de7-5253-a268-9532d41f0fb3
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactAgreement = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "agreement"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "scenario", "model", "compare_stack", "value"}),
+				    Add_scenario_key = Table.AddColumn(Kept, "scenario_key", each (if [domain] = null then "" else [domain]) & "|" & (if [scenario] = null then "" else [scenario]), type text)
+				in
+				    Add_scenario_key

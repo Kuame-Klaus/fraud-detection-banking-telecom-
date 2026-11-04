@@ -1,0 +1,21 @@
+table DimMonth
+	lineageTag: 737d6d62-43a7-5f10-9bf4-d442e0ffb2b3
+
+	column month
+		dataType: string
+		lineageTag: 672bf21f-fec1-5b64-8ca3-d4200255bcb3
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimMonth = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Kept = Table.SelectRows(Source, each List.Contains({"score", "dq", "drift"}, [record_type]) and [month] <> null),
+				    Months = Table.Distinct(Table.SelectColumns(Kept, {"month"})),
+				    Sorted = Table.Sort(Months, {{"month", Order.Ascending}})
+				in
+				    Sorted

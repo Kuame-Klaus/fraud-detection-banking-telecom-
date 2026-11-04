@@ -1,6 +1,7 @@
 # Power BI
 
-Planned only. Nothing is built here yet. When details arrive, Power BI will rebuild the same 12 charts as Python (docs/charts.md), reading the same shared results files (docs/output_schema.md).
+The Power BI project is in FraudDetection/ (PBIP format: TMDL semantic model and PBIR report, 12 pages, theme D). It works out of the box on the bundled SYNTHETIC 50k sample results, and a parameter switches it to the full results on GitHub. Start with FraudDetection/README.md.
 
+Design: docs/powerbi_design.md. Theme: klaus_konsults_theme_d.json (Theme D, chosen by Klaus Konsults).
 
-Theme: klaus_konsults_theme_d.json (Theme D, chosen by Klaus Konsults). See docs/powerbi_design.md.
+A Klaus Konsults project. All data is SYNTHETIC.

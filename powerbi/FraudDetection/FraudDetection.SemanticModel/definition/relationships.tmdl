@@ -1,0 +1,128 @@
+relationship 741c53a6-d6d6-51d7-ad05-4b6dd4c39511
+	fromColumn: FactScore.scenario_key
+	toColumn: DimScenario.scenario_key
+
+relationship 636bb14e-f605-57b0-8a37-16e715e4cb26
+	fromColumn: FactScore.stack
+	toColumn: DimStack.stack
+
+relationship 163c0cc5-34c3-598e-a50c-5d6c23259dbd
+	fromColumn: FactScore.model
+	toColumn: DimModel.model
+
+relationship e5b98b0c-e51d-5a14-a47d-558ee77dafe7
+	fromColumn: FactScore.event_date
+	toColumn: DimDate.Date
+
+relationship 7aa598ae-fe41-55d0-b4f4-1d336dd04877
+	fromColumn: FactScore.month
+	toColumn: DimMonth.month
+
+relationship d69a6d59-f5d9-5398-8a56-07994dce26b7
+	fromColumn: FactMetric.scenario_key
+	toColumn: DimScenario.scenario_key
+
+relationship 2cdfb17a-abb3-5ce3-bcb2-6f95094b10b4
+	fromColumn: FactMetric.stack
+	toColumn: DimStack.stack
+
+relationship b61b40d7-3d10-574f-9f2d-9dd122caa6c9
+	fromColumn: FactMetric.model
+	toColumn: DimModel.model
+
+relationship cdfb993a-b38f-55a7-9b95-d46ab6c4e9d1
+	fromColumn: FactDQ.dataset_key
+	toColumn: DimDataset.dataset_key
+
+relationship 884dd0b6-6c3a-5111-9a8c-5e53acfed5af
+	fromColumn: FactDQ.stack
+	toColumn: DimStack.stack
+
+relationship fb761c08-0374-572c-a5e6-8eb27f9c7483
+	fromColumn: FactDQ.month
+	toColumn: DimMonth.month
+
+relationship 3329c7c6-53f5-51c3-91af-05120167887c
+	fromColumn: FactCoverage.scenario_key
+	toColumn: DimScenario.scenario_key
+
+relationship a6666390-8034-53eb-971c-8dc7dbb3dd13
+	fromColumn: FactThreshold.scenario_key
+	toColumn: DimScenario.scenario_key
+
+relationship 9d354e16-08e8-570f-8c59-74387a2f4c57
+	fromColumn: FactThreshold.model
+	toColumn: DimModel.model
+
+relationship d6c68da5-0388-5aba-b716-f20971819cf8
+	fromColumn: FactDrift.domain
+	toColumn: DimDomain.domain
+
+relationship b1b81d5a-77a5-562e-8b16-b723a03aa68e
+	fromColumn: FactDrift.month
+	toColumn: DimMonth.month
+
+relationship f56f515f-6cb3-576a-ac2b-f58ae047336d
+	fromColumn: FactDrift.model
+	toColumn: DimModel.model
+
+relationship 6bec7a3c-30a6-5494-85a6-4d4bc3955d81
+	fromColumn: FactAgreement.scenario_key
+	toColumn: DimScenario.scenario_key
+
+relationship 6c7d5ffb-170c-5e0b-a855-43b52b48cee7
+	fromColumn: FactAgreement.stack
+	toColumn: DimStack.stack
+
+relationship 54d5daa5-cbd6-5585-90c1-30a498a3f72d
+	fromColumn: FactEdge.domain
+	toColumn: DimDomain.domain
+
+relationship 2f5f2c47-f243-5b58-b75e-4575f5b9184e
+	fromColumn: FactEdge.stack
+	toColumn: DimStack.stack
+
+relationship 4fd9bcb1-736c-5b7d-9554-6a2fe3050052
+	fromColumn: FactBenford.dataset_key
+	toColumn: DimDataset.dataset_key
+
+relationship 071c0301-f850-599c-a4e7-12152c5b39c2
+	fromColumn: FactGeo.dataset_key
+	toColumn: DimDataset.dataset_key
+
+relationship 20509614-8035-55da-9dab-0c2c8fdce6a2
+	fromColumn: FactRun.stack
+	toColumn: DimStack.stack
+
+relationship fe8d7aca-7a54-5de4-ac43-ec2c2d335f9f
+	fromColumn: FactPRCurve.domain
+	toColumn: DimDomain.domain
+
+relationship 3540c384-afa2-55a7-8339-e3dd1df786ff
+	fromColumn: FactPRCurve.model
+	toColumn: DimModel.model
+
+relationship 5f41ad4b-d94a-5696-ab2b-abf3353a9d5c
+	fromColumn: FactPRCurve.stack
+	toColumn: DimStack.stack
+
+relationship b0399a52-300d-5de6-ac70-f39cf4fa6f80
+	fromColumn: FactCoefficient.domain
+	toColumn: DimDomain.domain
+
+relationship 43db7596-dde3-5a40-86e1-78e3a6c1c03e
+	fromColumn: FactCoefficient.model
+	toColumn: DimModel.model
+
+relationship 838581cb-e59e-5a14-b303-cb03ff2e12db
+	fromColumn: DimScenario.domain
+	toColumn: DimDomain.domain
+
+relationship d43dacbe-87e9-51f9-87ca-445cd09c9365
+	fromColumn: DimDataset.domain
+	toColumn: DimDomain.domain
+
+relationship 6f48747d-b548-5ce0-84b5-dac335b059d0
+	isActive: false
+	fromColumn: FactAgreement.compare_stack
+	toColumn: DimStack.stack

@@ -1,0 +1,118 @@
+table FactGeo
+	lineageTag: 21ae9865-47a4-5077-862a-a46d68e18c2a
+
+	column run_id
+		dataType: string
+		lineageTag: d548f9aa-9ba7-568a-a42f-442ebdab4342
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: a0b8dc5f-bc76-5392-acf5-e8558632ef96
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: ac0b823b-599a-50be-8a20-a068381a6e60
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: cd24cc05-7d1d-542d-8010-67c77914cecf
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: string
+		lineageTag: c8c7e626-690a-5206-b858-793d7dee3eed
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: bebc85fa-6566-5c1a-b16c-b5ec105826a2
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column route
+		dataType: string
+		lineageTag: d3d47486-d38d-5986-8c79-c27560afcdf8
+		summarizeBy: none
+		sourceColumn: route
+
+		annotation SummarizationSetBy = Automatic
+
+	column cell_id
+		dataType: string
+		lineageTag: d4c4fda1-9697-5fc2-ae73-a6447ef2ec59
+		summarizeBy: none
+		sourceColumn: cell_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column latitude
+		dataType: double
+		lineageTag: 839a97c4-873a-5e51-b140-b3f72054af5d
+		summarizeBy: none
+		sourceColumn: latitude
+
+		annotation SummarizationSetBy = Automatic
+
+	column longitude
+		dataType: double
+		lineageTag: 88d601f2-cc22-5c49-bfb3-31ad6a36103a
+		summarizeBy: none
+		sourceColumn: longitude
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_minutes
+		dataType: double
+		lineageTag: e6cdec9d-15af-54e4-8034-edd78168db35
+		summarizeBy: none
+		sourceColumn: geo_minutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_settled_minutes
+		dataType: double
+		lineageTag: 3b8d443c-1f45-54c4-8ed3-c7c2c55da826
+		summarizeBy: none
+		sourceColumn: geo_settled_minutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_key
+		dataType: string
+		isHidden
+		lineageTag: 71ed5331-baf3-597f-b187-4b578129aba0
+		summarizeBy: none
+		sourceColumn: dataset_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactGeo = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "geo"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "month", "note", "route", "cell_id", "latitude", "longitude", "geo_minutes", "geo_settled_minutes"}),
+				    Add_dataset_key = Table.AddColumn(Kept, "dataset_key", each (if [domain] = null then "" else [domain]) & "|" & (if [dataset_id] = null then "" else [dataset_id]), type text)
+				in
+				    Add_dataset_key

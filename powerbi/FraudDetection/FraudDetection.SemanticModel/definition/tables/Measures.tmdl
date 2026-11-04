@@ -1,0 +1,208 @@
+table Measures
+	lineageTag: d9f22998-86d7-5d6d-9e5c-309356c288d9
+
+	measure 'Records Scored' = COUNTROWS ( FactScore )
+		formatString: #,0
+		lineageTag: 6f092ed6-e800-5d5e-898e-46d0f57f2b0a
+
+	measure Alerts = CALCULATE ( COUNTROWS ( FactScore ), FactScore[predicted_label] = 1 )
+		formatString: #,0
+		lineageTag: 322e7ec5-c23d-526e-9690-6532b2334e45
+
+	measure 'Planted Cases' = CALCULATE ( COUNTROWS ( FactScore ), FactScore[true_label] = 1 )
+		formatString: #,0
+		lineageTag: 0b598349-957e-5041-afca-260ef6e5691c
+
+	measure 'True Positives' = CALCULATE ( COUNTROWS ( FactScore ), FactScore[predicted_label] = 1, FactScore[true_label] = 1 )
+		formatString: #,0
+		lineageTag: f9ffd742-057a-5008-adfe-9229f492c9f2
+
+	measure 'False Positives' = CALCULATE ( COUNTROWS ( FactScore ), FactScore[predicted_label] = 1, FactScore[true_label] = 0 )
+		formatString: #,0
+		lineageTag: ef2e5309-effa-5840-b860-62bcffe52c1a
+
+	measure 'False Negatives' = CALCULATE ( COUNTROWS ( FactScore ), FactScore[predicted_label] = 0, FactScore[true_label] = 1 )
+		formatString: #,0
+		lineageTag: 40120dc8-f6b3-5116-aec9-4fbac90a43c0
+
+	measure 'True Negatives' = CALCULATE ( COUNTROWS ( FactScore ), FactScore[predicted_label] = 0, FactScore[true_label] = 0 )
+		formatString: #,0
+		lineageTag: 67285d99-6e51-5aff-8e2c-f7e29a1ab155
+
+	measure Precision = DIVIDE ( [True Positives], [Alerts] )
+		formatString: 0.000
+		lineageTag: 99ff0e3c-3f37-58a8-89b4-0aa0ebadb3da
+
+	measure Recall = DIVIDE ( [True Positives], [Planted Cases] )
+		formatString: 0.000
+		lineageTag: 79a99192-87d1-5f79-abce-42b8e55cf87e
+
+	measure F1 = DIVIDE ( 2 * [Precision] * [Recall], [Precision] + [Recall] )
+		formatString: 0.000
+		lineageTag: 650d1d98-d1cb-57d6-934f-e20ae25f8244
+
+	measure 'Alert Rate' = DIVIDE ( [Alerts], [Records Scored] )
+		formatString: 0.00%
+		lineageTag: 144c332f-8b27-57e2-a5be-23a1832d1475
+
+	measure 'Alerted Amount' = CALCULATE ( SUM ( FactScore[amount] ), FactScore[predicted_label] = 1 )
+		formatString: #,0.00
+		lineageTag: cbdc29eb-48eb-5b25-ac9c-388d09449c15
+
+	measure 'Detected Amount' = CALCULATE ( SUM ( FactScore[amount] ), FactScore[predicted_label] = 1, FactScore[true_label] = 1 )
+		formatString: #,0.00
+		lineageTag: bccfba41-9a77-5bf9-88d0-d22a7a86ccb0
+
+	measure 'Max Score' = MAX ( FactScore[score] )
+		formatString: 0.000
+		lineageTag: 48754a90-e3db-5bbe-af40-2f7cdbc2a563
+
+	measure 'Planted Scenario' = CONCATENATEX ( FILTER ( VALUES ( FactScore[true_scenario] ), NOT ISBLANK ( FactScore[true_scenario] ) ), FactScore[true_scenario], ", " )
+		lineageTag: 37dff9a3-9873-595a-ac3f-95305a42d2af
+
+	measure 'Metric Value' = SUM ( FactMetric[value] )
+		formatString: 0.000
+		lineageTag: 7ab75faf-83d0-5829-afa0-46812d3b982e
+
+	measure 'PR AUC' = CALCULATE ( AVERAGE ( FactMetric[value] ), FactMetric[metric] = "pr_auc", FactMetric[split] = "test" )
+		formatString: 0.000
+		lineageTag: 2bd5ccdd-31f7-5523-8cce-8edbe4d2a484
+
+	measure 'Rule Recall' = CALCULATE ( AVERAGE ( FactMetric[value] ), FactMetric[metric] = "recall", FactMetric[model] = "rule" )
+		formatString: 0.000
+		lineageTag: 6b07a3a5-3224-55a2-b3fe-3201325ed8c1
+
+	measure 'Rule Precision' = CALCULATE ( AVERAGE ( FactMetric[value] ), FactMetric[metric] = "precision", FactMetric[model] = "rule" )
+		formatString: 0.000
+		lineageTag: 5cbdc863-5cb6-54a6-89d2-ddca291f5a9f
+
+	measure 'Rule Alerts' = CALCULATE ( SUM ( FactMetric[value] ), FactMetric[metric] = "alerts", FactMetric[model] = "rule" )
+		formatString: #,0
+		lineageTag: 239ebad2-1c8e-560b-b0b3-196a6287d4e7
+
+	measure 'Train Rows' = MAX ( FactMetric[train_rows] )
+		formatString: #,0
+		lineageTag: e6d1409a-78ad-565e-b503-f796d6e40ac2
+
+	measure 'Threshold Change Value' = SELECTEDVALUE ( 'Threshold change'[Threshold change], 0 )
+		formatString: 0
+		lineageTag: 73011836-836a-5e67-8abd-69aac05f7509
+
+	measure 'Alerts At Threshold' = CALCULATE ( SUM ( FactThreshold[alert_count] ), FactThreshold[threshold_change_pct] = [Threshold Change Value] )
+		formatString: #,0
+		lineageTag: 7fefada2-3834-5169-8fb9-00147651bf27
+
+	measure 'Detected At Threshold' = CALCULATE ( SUM ( FactThreshold[detected_count] ), FactThreshold[threshold_change_pct] = [Threshold Change Value] )
+		formatString: #,0
+		lineageTag: caa27a89-f409-574f-bca7-9cf8d05835bc
+
+	measure 'Threshold Alert Count' = SUM ( FactThreshold[alert_count] )
+		formatString: #,0
+		lineageTag: eac4e31f-8206-5159-b365-3cbf20d1bbc9
+
+	measure 'Threshold Detected Count' = SUM ( FactThreshold[detected_count] )
+		formatString: #,0
+		lineageTag: d146bed2-061b-5486-9a91-f8014d2d8728
+
+	measure 'DQ Checks' = COUNTROWS ( FactDQ )
+		formatString: #,0
+		lineageTag: f3302ac2-8171-5bef-91c8-dc517895a21a
+
+	measure 'DQ Failed' = CALCULATE ( COUNTROWS ( FactDQ ), FactDQ[passed] = FALSE () ) + 0
+		formatString: #,0
+		lineageTag: 074bea6e-0eaf-5e80-97ce-65554c3eddf2
+
+	measure 'DQ Pass Rate' = DIVIDE ( [DQ Checks] - [DQ Failed], [DQ Checks] )
+		formatString: 0.0%
+		lineageTag: 0994b65d-b824-51dd-847a-6a56b2b1ddd5
+
+	measure 'Benford Observed Share' = DIVIDE ( SUM ( FactBenford[observed_count] ), CALCULATE ( SUM ( FactBenford[observed_count] ), REMOVEFILTERS ( FactBenford[first_digit] ) ) )
+		formatString: 0.0%
+		lineageTag: d66becdd-35ed-5b18-8138-74c76399ece3
+
+	measure 'Benford Expected Share' = AVERAGE ( FactBenford[expected_share] )
+		formatString: 0.0%
+		lineageTag: 792ea80f-ee29-577e-b9f3-be3bcef07d47
+
+	measure 'Benford Gap' = [Benford Observed Share] - [Benford Expected Share]
+		formatString: 0.0%
+		lineageTag: 10daca67-4622-5e87-90ce-9caefdd528a5
+
+	measure 'Runtime Seconds' = SUM ( FactRun[runtime_seconds] )
+		formatString: #,0.0
+		lineageTag: 560769b6-67c3-5ba2-8c59-45372b05933a
+
+	measure 'Peak Memory MB' = MAX ( FactRun[peak_memory_mb] )
+		formatString: #,0
+		lineageTag: 352855e2-5674-5892-9b0e-15acd807c409
+
+	measure 'Agreement Rate' = AVERAGE ( FactAgreement[value] )
+		formatString: 0.0%
+		lineageTag: 7562ddd7-926d-50e3-b180-1747bf98ff61
+
+	measure 'Uncovered Scenarios' = CALCULATE ( COUNTROWS ( FactCoverage ), FactCoverage[covered] = FALSE () ) + 0
+		formatString: #,0
+		lineageTag: b043843d-c666-5e8e-b47e-8f6c9aad837c
+
+	measure 'Drift Band Share' = AVERAGE ( FactDrift[band_share] )
+		formatString: 0.0%
+		lineageTag: 120e5d91-0719-5877-86d1-8591f90643c3
+
+	measure 'Route Minutes' = SUM ( FactGeo[geo_minutes] )
+		formatString: #,0
+		lineageTag: 31f86267-decc-5ab3-a0d7-d2d7c582ac4e
+
+	measure 'Settled Minutes' = SUM ( FactGeo[geo_settled_minutes] )
+		formatString: #,0
+		lineageTag: dca63323-225a-54ed-ad3f-4ea80d839adb
+
+	measure 'Unsettled Minutes' = SUMX ( FILTER ( FactGeo, NOT ISBLANK ( FactGeo[geo_settled_minutes] ) ), FactGeo[geo_minutes] - FactGeo[geo_settled_minutes] )
+		formatString: #,0
+		lineageTag: d3df9008-ff42-59ee-805b-e330e2f6ec6a
+
+	measure 'Cell Minutes' = CALCULATE ( SUM ( FactGeo[geo_minutes] ), NOT ISBLANK ( FactGeo[cell_id] ) )
+		formatString: #,0
+		lineageTag: 094b77db-32a8-5f0a-ac38-3b6c28f97720
+
+	measure 'Edge Weight' = SUM ( FactEdge[edge_weight] )
+		formatString: #,0.00
+		lineageTag: c6a43d15-41e2-5cb7-94a6-6ae5e436cbec
+
+	measure 'Edge Links' = COUNTROWS ( FactEdge )
+		formatString: #,0
+		lineageTag: f8485222-4733-5308-af38-820a581ebaa5
+
+	measure 'Edge Transactions' = SUM ( FactEdge[edge_count] )
+		formatString: #,0
+		lineageTag: 0fb342f2-5012-528a-818b-7ddd12566366
+
+	measure 'Curve Precision' = AVERAGE ( FactPRCurve[curve_precision] )
+		formatString: 0.000
+		lineageTag: 9cf4db65-0bc9-5c11-9460-4ff7ee81ed61
+
+	measure Coefficient = AVERAGE ( FactCoefficient[coefficient] )
+		formatString: 0.000
+		lineageTag: d0937fb1-1cc1-5c6a-a3f9-c62c385b50b6
+
+	measure 'Odds Ratio' = AVERAGE ( FactCoefficient[odds_ratio] )
+		formatString: 0.000
+		lineageTag: a11351e3-f11a-5e94-afb7-4491d87ff2fc
+
+	column Placeholder
+		dataType: string
+		isHidden
+		lineageTag: b3c6a3af-6a9e-53dd-acce-8999e82f668b
+		summarizeBy: none
+		sourceColumn: Placeholder
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Placeholder = text], {})
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

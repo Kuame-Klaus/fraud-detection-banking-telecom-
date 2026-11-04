@@ -1,0 +1,110 @@
+table FactDQ
+	lineageTag: 2a5ad99e-d034-5dc3-9f90-310de5fb8c4d
+
+	column run_id
+		dataType: string
+		lineageTag: b07549ef-cf46-5ef5-be68-2dbce022b27c
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 895de8e1-c367-572c-aaae-38001f2e7047
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: f3eb5027-91bf-54a4-9a22-55681d961478
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: a4936583-854a-59e7-8e2f-6d2625772614
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: string
+		lineageTag: cdd4306a-0804-5a40-b900-55fa06e1515b
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column step
+		dataType: int64
+		lineageTag: 5b736849-6178-5927-9eac-fcd9e7e0fd19
+		summarizeBy: none
+		sourceColumn: step
+
+		annotation SummarizationSetBy = Automatic
+
+	column check_name
+		dataType: string
+		lineageTag: 4286a13a-19d0-5c3d-8c31-63f4eea26551
+		summarizeBy: none
+		sourceColumn: check_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column expected
+		dataType: string
+		lineageTag: 2b05477f-b41e-5710-96a6-ac4e2bafd799
+		summarizeBy: none
+		sourceColumn: expected
+
+		annotation SummarizationSetBy = Automatic
+
+	column observed
+		dataType: string
+		lineageTag: 5179b005-b275-56b1-9e36-74b3d2a9b3f3
+		summarizeBy: none
+		sourceColumn: observed
+
+		annotation SummarizationSetBy = Automatic
+
+	column passed
+		dataType: boolean
+		lineageTag: db224937-26ac-58fd-b35a-3eda55e6882f
+		summarizeBy: none
+		sourceColumn: passed
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: 8eeaa76a-96c6-521c-8650-b6fc01f47010
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_key
+		dataType: string
+		isHidden
+		lineageTag: 4fbbf2c6-3cdd-570d-a7e6-d13f0bb11645
+		summarizeBy: none
+		sourceColumn: dataset_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactDQ = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "dq"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "month", "step", "check_name", "expected", "observed", "passed", "note"}),
+				    Add_dataset_key = Table.AddColumn(Kept, "dataset_key", each (if [domain] = null then "" else [domain]) & "|" & (if [dataset_id] = null then "" else [dataset_id]), type text)
+				in
+				    Add_dataset_key

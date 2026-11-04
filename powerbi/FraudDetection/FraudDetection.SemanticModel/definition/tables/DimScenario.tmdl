@@ -1,0 +1,39 @@
+table DimScenario
+	lineageTag: 5d17c7b6-34d8-5598-8ea2-cc11e6a606e9
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: e7583f97-47fd-5dae-9ffb-15ab9a7cad4b
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 0da5a750-a9ff-5800-aee1-2560fa7f1806
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 8a3c2573-e6b6-5999-a5b7-c4627deaf54b
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimScenario = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Kept = Table.SelectRows(Source, each [scenario] <> null and [domain] <> null),
+				    Pairs = Table.Distinct(Table.SelectColumns(Kept, {"domain", "scenario"})),
+				    AddKey = Table.AddColumn(Pairs, "scenario_key", each [domain] & "|" & [scenario], type text),
+				    Ordered = Table.SelectColumns(AddKey, {"scenario_key", "domain", "scenario"})
+				in
+				    Ordered

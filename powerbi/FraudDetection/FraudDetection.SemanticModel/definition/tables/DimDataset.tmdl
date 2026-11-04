@@ -1,0 +1,78 @@
+table DimDataset
+	lineageTag: 69971e9b-682b-5a25-9e08-385b7c11c8a0
+
+	column dataset_key
+		dataType: string
+		isHidden
+		lineageTag: 3096d9d5-79f7-5ce9-b91e-c61fbfb4dc0b
+		summarizeBy: none
+		sourceColumn: dataset_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: 13c60aa3-f205-547c-90a4-6894f99079fd
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 7111c494-0d86-5596-bed2-f3354b970f16
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_name
+		dataType: string
+		lineageTag: 389e8b52-1a0d-569f-92c3-696573122efd
+		summarizeBy: none
+		sourceColumn: dataset_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_order
+		dataType: int64
+		lineageTag: a7f95924-fb35-58aa-9453-b4cd6d6435a1
+		summarizeBy: none
+		sourceColumn: dataset_order
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimDataset = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [dataset_key = type text, dataset_id = type text, domain = type text, dataset_name = type text, dataset_order = Int64.Type], {
+				        {"banking|B1", "B1", "banking", "Transactions", 1},
+				        {"banking|B2", "B2", "banking", "Accounts", 2},
+				        {"banking|B3", "B3", "banking", "Persons", 3},
+				        {"banking|B4", "B4", "banking", "Auth events", 4},
+				        {"banking|B5", "B5", "banking", "Devices", 5},
+				        {"banking|B6", "B6", "banking", "Beneficiaries", 6},
+				        {"banking|B7", "B7", "banking", "GL journal", 7},
+				        {"banking|B8", "B8", "banking", "Users access", 8},
+				        {"banking|B9", "B9", "banking", "Cards and authorisations", 9},
+				        {"banking|B10", "B10", "banking", "Vendors and payments", 10},
+				        {"banking|B11", "B11", "banking", "Payroll and HR", 11},
+				        {"banking|B12", "B12", "banking", "Fraud cases", 12},
+				        {"banking|B13", "B13", "banking", "Existing alerts", 13},
+				        {"banking|B14", "B14", "banking", "Reference parameters", 14},
+				        {"telecom|T1", "T1", "telecom", "CDRs", 15},
+				        {"telecom|T2", "T2", "telecom", "Subscribers", 16},
+				        {"telecom|T3", "T3", "telecom", "SIMs and SIM swap events", 17},
+				        {"telecom|T4", "T4", "telecom", "MoMo wallet txns", 18},
+				        {"telecom|T5", "T5", "telecom", "Wallets", 19},
+				        {"telecom|T6", "T6", "telecom", "Agents", 20},
+				        {"telecom|T7", "T7", "telecom", "Topups billing", 21},
+				        {"telecom|T8", "T8", "telecom", "Interconnect traffic", 22},
+				        {"telecom|T9", "T9", "telecom", "Cell sites and roaming", 23},
+				        {"telecom|T10", "T10", "telecom", "Complaints and cases", 24},
+				        {"telecom|T11", "T11", "telecom", "Alerts and rules", 25},
+				        {"telecom|T12", "T12", "telecom", "Reference parameters", 26}
+				    })
+				in
+				    Source

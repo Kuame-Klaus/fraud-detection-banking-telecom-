@@ -1,0 +1,94 @@
+table FactThreshold
+	lineageTag: 8296dc21-68f7-5936-947b-9b72e6ae8971
+
+	column run_id
+		dataType: string
+		lineageTag: 6292a2af-bd2e-5fb8-b419-8e4cad1ce7c1
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: b3c0f0ad-1095-5706-a22e-ce27a092aea9
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: be208c4a-5cf0-5720-b533-eff845e2cb5f
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 15e54cac-0767-5804-8e97-2a1da2a8bbb6
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 8f159058-7f3d-57e4-81b7-30d654f157f4
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column threshold
+		dataType: double
+		lineageTag: 70e96c52-abfa-5d49-8134-e1b54b39a55e
+		summarizeBy: none
+		sourceColumn: threshold
+
+		annotation SummarizationSetBy = Automatic
+
+	column threshold_change_pct
+		dataType: double
+		lineageTag: 2e141bb5-c9aa-5383-828f-cad5acb99e3d
+		summarizeBy: none
+		sourceColumn: threshold_change_pct
+
+		annotation SummarizationSetBy = Automatic
+
+	column alert_count
+		dataType: int64
+		lineageTag: 65286e03-2586-50e2-a923-b85251dff249
+		summarizeBy: none
+		sourceColumn: alert_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column detected_count
+		dataType: int64
+		lineageTag: 68de8626-8c54-5139-a720-7812f7cd0bb2
+		summarizeBy: none
+		sourceColumn: detected_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: 1a5978b3-d145-5199-bee8-f1995e0734a0
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactThreshold = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "threshold"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "scenario", "model", "threshold", "threshold_change_pct", "alert_count", "detected_count"}),
+				    Add_scenario_key = Table.AddColumn(Kept, "scenario_key", each (if [domain] = null then "" else [domain]) & "|" & (if [scenario] = null then "" else [scenario]), type text)
+				in
+				    Add_scenario_key

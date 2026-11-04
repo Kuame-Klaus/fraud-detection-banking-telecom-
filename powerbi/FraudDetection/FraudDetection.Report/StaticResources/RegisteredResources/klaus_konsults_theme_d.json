@@ -1,0 +1,39 @@
+{
+  "name": "Klaus Konsults Theme D",
+  "dataColors": ["#1B2A49", "#0F9D9A", "#F2A900", "#F26B5B", "#4A5D85", "#5CC2BF", "#B07B00", "#B8483B"],
+  "background": "#FFFFFF",
+  "foreground": "#1B2A49",
+  "tableAccent": "#1B2A49",
+  "good": "#0F9D9A",
+  "neutral": "#F2A900",
+  "bad": "#C8473A",
+  "maximum": "#1B2A49",
+  "center": "#0F9D9A",
+  "minimum": "#FFFFFF",
+  "textClasses": {
+    "title": { "fontFace": "Arial", "fontSize": 14, "color": "#1B2A49" },
+    "header": { "fontFace": "Arial", "fontSize": 12, "color": "#1B2A49" },
+    "label": { "fontFace": "Arial", "fontSize": 10, "color": "#4A5568" },
+    "callout": { "fontFace": "Arial", "fontSize": 24, "color": "#1B2A49" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "title": [{ "fontFamily": "Arial", "fontSize": 12, "fontColor": { "solid": { "color": "#1B2A49" } }, "bold": true, "show": true }],
+        "background": [{ "color": { "solid": { "color": "#FFFFFF" } } }],
+        "border": [{ "show": true, "color": { "solid": { "color": "#D5DAE1" } } }]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "columnHeaders": [{ "fontFamily": "Arial", "bold": true, "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1B2A49" } } }],
+        "values": [{ "fontFamily": "Arial", "backColorPrimary": { "solid": { "color": "#FFFFFF" } }, "backColorSecondary": { "solid": { "color": "#F3F5F8" } } }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "fontFamily": "Arial", "bold": true, "color": { "solid": { "color": "#1B2A49" } } }]
+      }
+    }
+  }
+}

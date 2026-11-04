@@ -1,0 +1,21 @@
+table DimDomain
+	lineageTag: c380358d-b304-5093-a084-0fdadb2d65f5
+
+	column domain
+		dataType: string
+		lineageTag: a68959cf-60e5-5dda-9a2f-7f750aac98cd
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimDomain = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [domain = type text], {
+				        {"banking"},
+				        {"telecom"}
+				    })
+				in
+				    Source

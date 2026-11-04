@@ -1,0 +1,30 @@
+table DimStack
+	lineageTag: 2c36eaae-15c7-5dbe-b948-dc13833329ca
+
+	column stack
+		dataType: string
+		lineageTag: 4e319184-3a16-5291-a2ee-b4f99fe082ac
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack_order
+		dataType: int64
+		lineageTag: 94624ad3-9fa3-5f7f-9592-940c6b62b117
+		summarizeBy: none
+		sourceColumn: stack_order
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimStack = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [stack = type text, stack_order = Int64.Type], {
+				        {"python", 1},
+				        {"alteryx", 2},
+				        {"knime", 3}
+				    })
+				in
+				    Source

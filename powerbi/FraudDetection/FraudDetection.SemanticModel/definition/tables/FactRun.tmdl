@@ -1,0 +1,60 @@
+table FactRun
+	lineageTag: be4926b3-72b6-5613-9b26-2a8231fea74f
+
+	column run_id
+		dataType: string
+		lineageTag: d12d927e-15af-5625-a14f-505d58a657f7
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 9a1af6cc-3b90-58a5-9f8e-448e1b57156a
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: 10b6c77b-c5e4-5620-819d-477883b612d4
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column runtime_seconds
+		dataType: double
+		lineageTag: e0a46a17-e4f8-558f-8c74-0df6318a605d
+		summarizeBy: none
+		sourceColumn: runtime_seconds
+
+		annotation SummarizationSetBy = Automatic
+
+	column peak_memory_mb
+		dataType: double
+		lineageTag: 9f64f9d9-f5d2-5160-bc52-c51afe952da2
+		summarizeBy: none
+		sourceColumn: peak_memory_mb
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage
+		dataType: string
+		lineageTag: 01106b68-0cba-55e1-b4c2-c9cce937bc09
+		summarizeBy: none
+		sourceColumn: stage
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactRun = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "run"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "note", "runtime_seconds", "peak_memory_mb", "stage"})
+				in
+				    Kept

@@ -1,0 +1,92 @@
+table FactCoefficient
+	lineageTag: fd1f9ac9-d3c6-5450-b641-7d61ab78a976
+
+	column run_id
+		dataType: string
+		lineageTag: d52a53a5-1644-526b-80b7-c52b23a73a4a
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 3c07c9b0-5932-5e1d-a91e-084cf0448017
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 1a25eb02-05ac-5039-a01a-4f26659376ea
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: e5ec2130-6048-5b6c-807e-6d2384d56d6d
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 2358446a-e851-5b16-867b-5a17d99ba360
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column step
+		dataType: int64
+		lineageTag: 45d706fe-0858-52f3-87a5-8bb2a572b452
+		summarizeBy: none
+		sourceColumn: step
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: 83ce92b3-399a-55ec-a56e-fc77ee52c1eb
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column feature
+		dataType: string
+		lineageTag: ad68936d-137d-53f5-97b3-1c120e81764f
+		summarizeBy: none
+		sourceColumn: feature
+
+		annotation SummarizationSetBy = Automatic
+
+	column coefficient
+		dataType: double
+		lineageTag: 64139357-c4d7-592f-88a3-531b19528e19
+		summarizeBy: none
+		sourceColumn: coefficient
+
+		annotation SummarizationSetBy = Automatic
+
+	column odds_ratio
+		dataType: double
+		lineageTag: f472fbe9-471d-5625-a7f0-2bf244d41f7a
+		summarizeBy: none
+		sourceColumn: odds_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactCoefficient = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "coefficient"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "model", "step", "note", "feature", "coefficient", "odds_ratio"})
+				in
+				    Kept

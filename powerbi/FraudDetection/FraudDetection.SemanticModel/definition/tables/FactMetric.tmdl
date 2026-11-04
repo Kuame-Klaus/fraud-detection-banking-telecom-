@@ -1,0 +1,142 @@
+table FactMetric
+	lineageTag: 203996da-4ea5-5703-8632-767bef17b1a7
+
+	column run_id
+		dataType: string
+		lineageTag: 4ee0cc5b-4b61-5432-8704-9a1edeba5b5a
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: 6b33650f-30aa-5ffe-afb1-05b0d4aa8c83
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: 874f693a-b410-5c77-b01d-52ca36f6d748
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: 5f09b9ff-d82c-5eb9-9511-eb4982c4403b
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 40e006f4-d67c-5a5e-bf4f-375bd55a7d9a
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 8e16736a-826a-5d97-8139-e547ba84e175
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column rule_id
+		dataType: string
+		lineageTag: 215e93ca-ff71-5edf-9d07-8705b62d4c99
+		summarizeBy: none
+		sourceColumn: rule_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column split
+		dataType: string
+		lineageTag: 873479a1-6f36-5d35-ba32-423b3c488cd1
+		summarizeBy: none
+		sourceColumn: split
+
+		annotation SummarizationSetBy = Automatic
+
+	column metric
+		dataType: string
+		lineageTag: c99d14b1-c1c1-5cdf-ac50-49c3c597883c
+		summarizeBy: none
+		sourceColumn: metric
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: double
+		lineageTag: 040f2a6b-16f5-5f20-a289-eba6ee5178d0
+		summarizeBy: none
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+	column alert_rate
+		dataType: double
+		lineageTag: 6761f8f5-f75a-5432-b753-5d26ef519e19
+		summarizeBy: none
+		sourceColumn: alert_rate
+
+		annotation SummarizationSetBy = Automatic
+
+	column train_rows
+		dataType: int64
+		lineageTag: 8248dbc6-4d16-5e66-a08b-1a7d10324a25
+		summarizeBy: none
+		sourceColumn: train_rows
+
+		annotation SummarizationSetBy = Automatic
+
+	column sample_method
+		dataType: string
+		lineageTag: bd99ba71-728b-50ae-87bd-d7eefa479292
+		summarizeBy: none
+		sourceColumn: sample_method
+
+		annotation SummarizationSetBy = Automatic
+
+	column note
+		dataType: string
+		lineageTag: 905a14d0-a2df-5aa4-a6ac-4a405b72f142
+		summarizeBy: none
+		sourceColumn: note
+
+		annotation SummarizationSetBy = Automatic
+
+	column runtime_seconds
+		dataType: double
+		lineageTag: 6f01b7cb-4fb6-5cba-b013-dd8977eeb497
+		summarizeBy: none
+		sourceColumn: runtime_seconds
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_key
+		dataType: string
+		isHidden
+		lineageTag: ee961a9d-0000-5dbf-aa39-ce045aa2ded7
+		summarizeBy: none
+		sourceColumn: scenario_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactMetric = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "metric"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "scenario", "model", "rule_id", "split", "metric", "value", "alert_rate", "train_rows", "sample_method", "note", "runtime_seconds"}),
+				    Add_scenario_key = Table.AddColumn(Kept, "scenario_key", each (if [domain] = null then "" else [domain]) & "|" & (if [scenario] = null then "" else [scenario]), type text)
+				in
+				    Add_scenario_key

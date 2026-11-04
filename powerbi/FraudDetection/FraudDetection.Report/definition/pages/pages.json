@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
+  "pageOrder": [
+    "p01_kpi_overview",
+    "p02_detection_heatmap",
+    "p03_pr_curves_confusion",
+    "p04_alert_trends",
+    "p05_risk_leaderboards",
+    "p06_network_graphs",
+    "p07_hour_weekday",
+    "p08_benford",
+    "p09_threshold_slider",
+    "p10_dq_reconciliation",
+    "p11_runtime_memory",
+    "p12_route_cell_maps"
+  ],
+  "activePageName": "p01_kpi_overview"
+}

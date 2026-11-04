@@ -1,0 +1,78 @@
+table FactBenford
+	lineageTag: 1e4710c1-9f65-5f62-8525-a8c22da9c47e
+
+	column run_id
+		dataType: string
+		lineageTag: b760e9b1-237c-5332-a24f-6bc57b46bc91
+		summarizeBy: none
+		sourceColumn: run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stack
+		dataType: string
+		lineageTag: cd10a81e-7fd0-590d-b4d8-5b250c4035bd
+		summarizeBy: none
+		sourceColumn: stack
+
+		annotation SummarizationSetBy = Automatic
+
+	column domain
+		dataType: string
+		lineageTag: dbc520c0-8b05-5aed-bdeb-d4a414cde8a9
+		summarizeBy: none
+		sourceColumn: domain
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_id
+		dataType: string
+		lineageTag: ad3348b5-3f2e-5c02-934d-5e89dfcff15f
+		summarizeBy: none
+		sourceColumn: dataset_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column first_digit
+		dataType: int64
+		lineageTag: 184ec0ae-cbc2-590b-be28-22574bdebde3
+		summarizeBy: none
+		sourceColumn: first_digit
+
+		annotation SummarizationSetBy = Automatic
+
+	column observed_count
+		dataType: int64
+		lineageTag: b4189f0a-a147-5948-bde4-231e7f72443a
+		summarizeBy: none
+		sourceColumn: observed_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column expected_share
+		dataType: double
+		lineageTag: b59fab74-77be-5906-a359-9e15e3801e71
+		summarizeBy: none
+		sourceColumn: expected_share
+
+		annotation SummarizationSetBy = Automatic
+
+	column dataset_key
+		dataType: string
+		isHidden
+		lineageTag: 51c1bac4-15d7-58fd-9778-49b707750acb
+		summarizeBy: none
+		sourceColumn: dataset_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactBenford = m
+		mode: import
+		source =
+				let
+				    Source = Results,
+				    Filtered = Table.SelectRows(Source, each [record_type] = "benford"),
+				    Kept = Table.SelectColumns(Filtered, {"run_id", "stack", "domain", "dataset_id", "first_digit", "observed_count", "expected_share"}),
+				    Add_dataset_key = Table.AddColumn(Kept, "dataset_key", each (if [domain] = null then "" else [domain]) & "|" & (if [dataset_id] = null then "" else [dataset_id]), type text)
+				in
+				    Add_dataset_key

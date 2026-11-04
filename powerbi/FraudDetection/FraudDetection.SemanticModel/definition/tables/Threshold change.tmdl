@@ -1,0 +1,15 @@
+table 'Threshold change'
+	lineageTag: a98a1466-cbab-54a0-9461-26cac523a01f
+
+	column 'Threshold change'
+		dataType: int64
+		isNameInferred
+		lineageTag: 0ef840ad-3a26-59a0-83a3-14443964c4f5
+		summarizeBy: none
+		sourceColumn: [Threshold change]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Threshold change' = calculated
+		mode: import
+		source = SELECTCOLUMNS ( GENERATESERIES ( -20, 20, 10 ), "Threshold change", [Value] )

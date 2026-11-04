@@ -1,0 +1,200 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "name": "fb08b2df077a5b84b1e5",
+  "position": {
+    "x": 16,
+    "y": 202,
+    "z": 11000,
+    "width": 1248,
+    "height": 474,
+    "tabOrder": 11000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "step"
+                }
+              },
+              "queryRef": "FactDQ.step",
+              "nativeQueryRef": "step"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "dataset_id"
+                }
+              },
+              "queryRef": "FactDQ.dataset_id",
+              "nativeQueryRef": "dataset_id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "month"
+                }
+              },
+              "queryRef": "FactDQ.month",
+              "nativeQueryRef": "month"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "check_name"
+                }
+              },
+              "queryRef": "FactDQ.check_name",
+              "nativeQueryRef": "check_name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "expected"
+                }
+              },
+              "queryRef": "FactDQ.expected",
+              "nativeQueryRef": "expected"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "observed"
+                }
+              },
+              "queryRef": "FactDQ.observed",
+              "nativeQueryRef": "observed"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "passed"
+                }
+              },
+              "queryRef": "FactDQ.passed",
+              "nativeQueryRef": "passed"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDQ"
+                    }
+                  },
+                  "Property": "note"
+                }
+              },
+              "queryRef": "FactDQ.note",
+              "nativeQueryRef": "note"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FactDQ"
+                  }
+                },
+                "Property": "passed"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": false
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Checks'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Arial'"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#1B2A49'"
+                    }
+                  }
+                }
+              }
+            },
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
